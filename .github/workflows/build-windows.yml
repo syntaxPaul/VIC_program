@@ -26,8 +26,9 @@ jobs:
     - name: Zip the executable
       run: Compress-Archive -Path dist\\vic.exe -DestinationPath vic.zip
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
+       - name: Upload artifact
+      uses: actions/upload-artifact@v2.3.1
       with:
         name: VictoryInChristApp
         path: vic.zip
+
