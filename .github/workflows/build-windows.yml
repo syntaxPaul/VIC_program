@@ -9,26 +9,26 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install PyInstaller
-      run: pip install pyinstaller
+      - name: Install PyInstaller
+        run: pip install pyinstaller
 
-    - name: Build vic.exe
-      run: pyinstaller --onefile --windowed --add-data "church_logo.jpg;." vic.py
+      - name: Build vic.exe
+        run: pyinstaller --onefile --windowed --add-data "church_logo.jpg;." vic.py
 
-    - name: Zip the executable
-      run: Compress-Archive -Path dist\\vic.exe -DestinationPath vic.zip
+      - name: Zip the executable
+        run: Compress-Archive -Path dist\\vic.exe -DestinationPath vic.zip
 
-       - name: Upload artifact
-      uses: actions/upload-artifact@v2.3.1
-      with:
-        name: VictoryInChristApp
-        path: vic.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: VictoryInChristApp
+          path: vic.zip
 
