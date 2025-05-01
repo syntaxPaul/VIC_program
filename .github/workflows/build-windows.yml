@@ -20,8 +20,14 @@ jobs:
       - name: Install PyInstaller
         run: pip install pyinstaller
 
-      - name: Build vic.exe
-        run: pyinstaller --onefile --windowed --add-data "church_logo.jpg;." vic.py
+      - name: Build vic.exe with custom icon
+        run: pyinstaller \
+          --onefile \
+          --windowed \
+          --icon=church_icon.ico \
+          --add-data "church_logo.jpg;." \
+          vic.py
+
 
       - name: Zip the executable
         run: Compress-Archive -Path dist\\vic.exe -DestinationPath vic.zip
