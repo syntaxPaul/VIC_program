@@ -21,12 +21,8 @@ jobs:
         run: pip install pyinstaller
 
       - name: Build vic.exe with custom icon
-        run: pyinstaller \
-          --onefile \
-          --windowed \
-          --icon=church_icon.ico \
-          --add-data "church_logo.jpg;." \
-          vic.py
+        run: pyinstaller --onefile --windowed --icon=church_icon.ico --add-data "church_logo.jpg;." vic.py
+
 
 
       - name: Zip the executable
