@@ -55,7 +55,7 @@ class ChurchMemberApp:
             ("Gender", ["Male","Female","Other"]),
             ("Street Address", "entry"),
             ("City", "entry"),
-            ("State", "entry"),
+            ("Province", "entry"),
             ("Postal Code", "entry"),
             ("Phone Number", "entry"),
             ("Email", "entry"),
@@ -85,7 +85,7 @@ class ChurchMemberApp:
             ("Date of Salvation","entry"),
             ("Date of Baptism","entry"),
             ("Previous Church","entry"),
-            ("Previous Church City/State","entry"),
+            ("Previous Church City/Province","entry"),
         ]
         self.entries_2 = {}
         for i, (label, widget) in enumerate(fields2):
