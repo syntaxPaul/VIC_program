@@ -142,21 +142,27 @@ class ChurchMemberApp:
                 previous_church TEXT, previous_church_location TEXT,
                 ministry TEXT, prayer_requests TEXT, registration_date TEXT
             )
-        """
-        )
+        """)
         self.conn.commit()
 
     def add_member(self):
-        data = {**{k: v.get() for k, v in self.entries_1.items()},
-                **{k: v.get() for k, v in self.entries_2.items()},
-                "Prayer": self.prayer_requests.get("1.0", "end").strip(),
-                "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        # Gather all inputs
+        data = {
+            **{k: v.get() for k, v in self.entries_1.items()},
+            **{k: v.get() for k, v in self.entries_2.items()},
+            "Prayer": self.prayer_requests.get("1.0", "end").strip(),
+            "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # Columns to insert (must match order of vals)
         cols = ",".join([
             "surname","full_name","dob","gender","address","city","state","postal_code",
             "phone","email","children","marital_status","interests","salvation_date",
             "baptism_date","previous_church","previous_church_location","ministry",
-            "prayer_requests","registration_date"])
-        placeholders = ",".join(["?" for _ in range(len(data)+1)])
+            "prayer_requests","registration_date"
+        ])
+
+        # Build the values list in the same order
         vals = [
             data.get("Surname"), data.get("Full Name"), data.get("Date of Birth"), data.get("Gender"),
             data.get("Street Address"), data.get("City"), data.get("State"), data.get("Postal Code"),
@@ -165,22 +171,38 @@ class ChurchMemberApp:
             data.get("Previous Church"), data.get("Previous Church City/State"), data.get("Ministry Involvement"),
             data.get("Prayer"), data.get("Date")
         ]
+
+        # Exactly one '?' per value
+        placeholders = ",".join(["?"] * len(vals))
+
+        # Execute insert
         self.conn.cursor().execute(
-            f"INSERT INTO members ({cols}) VALUES ({placeholders})", vals
+            f"INSERT INTO members ({cols}) VALUES ({placeholders})",
+            vals
         )
         self.conn.commit()
+
         messagebox.showinfo("Success", "Member registered successfully!")
         self.clear_forms()
         self.notebook.select(self.tab1)
 
     def clear_forms(self):
-        for widget in (*self.entries_1.values(), *self.entries_2.values()):
+        # Clear Tab 1 entries
+        for label, widget in self.entries_1.items():
             if isinstance(widget, ttk.Combobox):
                 widget.set("")
             else:
                 widget.delete(0, "end")
-                if widget.get() == 'YYYY-MM-DD':
+                if label in self.DATE_FIELDS:
                     self._add_placeholder(widget)
+
+        # Clear Tab 2 entries
+        for label, widget in self.entries_2.items():
+            widget.delete(0, "end")
+            if label in self.DATE_FIELDS:
+                self._add_placeholder(widget)
+
+        # Clear prayer requests
         self.prayer_requests.delete("1.0", "end")
 
     def search_member(self):
@@ -188,6 +210,7 @@ class ChurchMemberApp:
         if not term:
             messagebox.showwarning("Input needed", "Please enter a name or email to search.")
             return
+
         cur = self.conn.cursor()
         cur.execute(
             "SELECT * FROM members WHERE full_name LIKE ? OR email LIKE ?",
@@ -201,6 +224,7 @@ class ChurchMemberApp:
         win.geometry("600x500")
         container = ttk.Frame(win)
         container.pack(fill="both", expand=True, padx=10, pady=10)
+
         canvas = tk.Canvas(container, bg="#f9f9f9")
         scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
         scroll_frame = ttk.Frame(canvas)
@@ -217,10 +241,17 @@ class ChurchMemberApp:
                 card = ttk.Frame(scroll_frame, style="Card.TFrame", padding=15)
                 card.pack(fill="x", pady=8)
                 for i, col in enumerate(cols):
-                    ttk.Label(card, text=col.replace('_', ' ').title() + ":", font=('Helvetica',10,'bold'), background='white').grid(row=i, column=0, sticky="w", pady=2)
-                    ttk.Label(card, text=row[i], font=('Helvetica',10), background='white').grid(row=i, column=1, sticky="w", pady=2, padx=(5,0))
+                    ttk.Label(card,
+                              text=col.replace('_', ' ').title() + ":",
+                              font=('Helvetica',10,'bold'),
+                              background='white').grid(row=i, column=0, sticky="w", pady=2)
+                    ttk.Label(card,
+                              text=row[i],
+                              font=('Helvetica',10),
+                              background='white').grid(row=i, column=1, sticky="w", pady=2, padx=(5,0))
         else:
             ttk.Label(container, text="No matches found.", font=('Helvetica',12)).pack(pady=20)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
