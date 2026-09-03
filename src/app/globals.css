@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* ── Victory in Christ — design tokens ───────────────────────────────
+   Warm neutrals as the ground, one bronze brand accent, gold reserved
+   for decoration only (it fails contrast at body size), semantic
+   colours fixed and never brand-tinted.                              */
+
+@theme {
+  /* warm neutral ramp */
+  --color-sand-50:  #FAF8F4;
+  --color-sand-100: #F4F0E8;
+  --color-sand-200: #E8E2D6;
+  --color-sand-300: #D9D1C0;
+  --color-sand-400: #B3A995;
+  --color-sand-500: #8A7F6B;
+  --color-sand-600: #6F6558;
+  --color-sand-700: #514A40;
+  --color-sand-800: #3A342C;
+  --color-sand-900: #2F2A24;
+  --color-sand-950: #1C1813;
+
+  /* brand */
+  --color-bronze-50:  #F7F1E6;
+  --color-bronze-100: #EDE0C7;
+  --color-bronze-300: #C7A86D;
+  --color-bronze-500: #9A7738;
+  --color-bronze-600: #7A5C2E;
+  --color-bronze-700: #5E4723;
+  --color-gold: #C7A86D;
+
+  /* semantic — never brand-tinted */
+  --color-success: #1B7F5A;
+  --color-success-bg: #E6F4EE;
+  --color-warning: #B7791F;
+  --color-warning-bg: #FBF3E2;
+  --color-danger: #B42318;
+  --color-danger-bg: #FDECEA;
+  --color-info: #2563EB;
+  --color-info-bg: #E8F0FE;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-serif-display), Georgia, "Times New Roman", serif;
+}
+
+:root {
+  --surface: var(--color-sand-50);
+  --card: #ffffff;
+  --border: var(--color-sand-200);
+  --text: var(--color-sand-900);
+  --text-muted: var(--color-sand-600);
+  --brand: var(--color-bronze-600);
+  --sidebar: #ffffff;
+}
+
+[data-theme="dark"] {
+  --surface: #17140F;
+  --card: #211D17;
+  --border: #37312A;
+  --text: #F2EEE6;
+  --text-muted: #A79C8A;
+  --brand: var(--color-bronze-300);
+  --sidebar: #1C1813;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #17140F;
+    --card: #211D17;
+    --border: #37312A;
+    --text: #F2EEE6;
+    --text-muted: #A79C8A;
+    --brand: var(--color-bronze-300);
+    --sidebar: #1C1813;
+  }
+}
+
+* { border-color: var(--border); }
+
+html { color-scheme: light dark; }
+
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* tabular figures everywhere money or dates line up in a column */
+.tnum { font-variant-numeric: tabular-nums lining-nums; }
+
+/* focus ring */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-sand-300);
+  border-radius: 999px;
+  border: 2px solid var(--surface);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3F3830; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fade-up { animation: fade-up .28s ease-out both; }
+
+/* ── print: A4, South African convention ─────────────────────────── */
+@media print {
+  @page { size: A4; margin: 18mm 16mm; }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10.5pt;
+  }
+  .no-print, nav[data-app-nav], header[data-app-header] { display: none !important; }
+  .print-only { display: block !important; }
+  main { padding: 0 !important; }
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr, img, .avoid-break { break-inside: avoid; }
+  h1, h2, h3 { break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .print-landscape { page-break-before: auto; }
+  .exact-color { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@page landscape { size: A4 landscape; }
+
+.print-only { display: none; }

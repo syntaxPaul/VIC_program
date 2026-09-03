@@ -1,0 +1,705 @@
+// Victory in Christ — Church Management System
+// Data model. Money lines always carry BOTH a fund (whose money) and an account (what kind).
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─────────────────────────────────────────────────────────── users & access
+
+enum Role {
+  ADMIN // full access incl. users and settings
+  TREASURER // finance + assets
+  SECRETARY // members, planner, sacraments
+  PASTOR // read-only across the board + sacraments
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role      @default(SECRETARY)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  batchesCreated  Batch[]        @relation("BatchCreatedBy")
+  batchesReviewed Batch[]        @relation("BatchReviewedBy")
+  transactions    Transaction[]
+  verifications   Verification[]
+  auditLogs       AuditLog[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String // CREATE | UPDATE | DELETE | POST | APPROVE
+  entity    String // e.g. "Transaction"
+  entityId  String
+  summary   String
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────── church settings
+
+model Settings {
+  id                    Int      @id @default(1)
+  churchName            String   @default("Victory in Christ")
+  branchName            String   @default("")
+  addressLine1          String   @default("")
+  addressLine2          String   @default("")
+  city                  String   @default("")
+  province              String   @default("")
+  postalCode            String   @default("")
+  phone                 String   @default("")
+  email                 String   @default("")
+  logoPath              String   @default("")
+  // compliance — configurable, never assumed
+  isNpoRegistered       Boolean  @default(false)
+  npoNumber             String   @default("")
+  isPboApproved         Boolean  @default(false)
+  pboNumber             String   @default("")
+  is18aApproved         Boolean  @default(false)
+  section18aNumber      String   @default("")
+  // conventions
+  financialYearStartMonth Int    @default(3) // March, per SARS convention
+  currencyCode          String   @default("ZAR")
+  locale                String   @default("en-ZA")
+  capitalisationThreshold Float  @default(2000)
+  // tithe to main ministry
+  titheOutPercent       Float    @default(10)
+  mainMinistryName      String   @default("")
+  baptismCertificateText String  @default("")
+  updatedAt             DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────── people
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  DECEASED
+}
+
+model Member {
+  id            String         @id @default(cuid())
+  memberNumber  String         @unique
+  surname       String
+  fullName      String
+  dob           DateTime?
+  gender        Gender?
+  maritalStatus MaritalStatus?
+  status        MemberStatus   @default(ACTIVE)
+  photoPath     String?
+
+  // contact
+  addressLine String?
+  city        String?
+  province    String?
+  postalCode  String?
+  phone       String?
+  email       String?
+
+  // household
+  householdId String?
+  household   Household? @relation(fields: [householdId], references: [id])
+  children    String? // free text, as in the legacy app
+
+  // church life
+  salvationDate           DateTime?
+  baptismDate             DateTime?
+  previousChurch          String?
+  previousChurchLocation  String?
+  prayerRequests          String?
+  notes                   String?
+  registrationDate        DateTime  @default(now())
+
+  // s18A donor details — only required on the 18A path
+  idNumber       String?
+  taxRefNumber   String?
+
+  deletedAt DateTime? // soft delete, 5-year retention
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  ministries       MemberMinistry[]
+  interests        MemberInterest[]
+  contributions    ContributionLine[]
+  baptisms         Baptism[]
+  attendance       AttendanceEntry[]
+  assetsCustodied  Asset[]
+  receipts18a      Receipt18A[]
+
+  @@index([surname])
+  @@index([status])
+}
+
+/**
+ * Section 18A receipt. Field set follows SARS Public Notice 3082 (from
+ * 1 March 2023) and 6762 (from 1 March 2026), which prescribe donor
+ * identification and, for donations in kind, a description and fair value.
+ * Only issued for funds flagged is18aEligible.
+ */
+enum DonorNature {
+  NATURAL_PERSON
+  COMPANY
+  TRUST
+  OTHER
+}
+
+model Receipt18A {
+  id            String      @id @default(cuid())
+  receiptNumber String      @unique
+  issuedAt      DateTime    @default(now())
+  issuedBy      String?
+
+  memberId String?
+  member   Member? @relation(fields: [memberId], references: [id])
+
+  // donor identification — prescribed
+  donorName        String
+  donorNature      DonorNature @default(NATURAL_PERSON)
+  donorIdType      String? // ID / passport / registration
+  donorIdCountry   String      @default("South Africa")
+  donorIdNumber    String?
+  donorTaxRef      String?
+  donorAddress     String?
+  donorPhone       String?
+  donorEmail       String?
+  donorTradingName String?
+
+  // the donation
+  donationDate  DateTime
+  amount        Float
+  isInKind      Boolean @default(false)
+  inKindDescription String?
+  inKindFairValue   Float?
+
+  fundId String
+  fund   Fund   @relation(fields: [fundId], references: [id])
+
+  purpose   String  @default("Used solely in carrying on the public benefit activities of the organisation.")
+  cancelled Boolean @default(false)
+  cancelledReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([donationDate])
+  @@index([memberId])
+}
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  members   Member[]
+}
+
+model Ministry {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  isActive    Boolean          @default(true)
+  members     MemberMinistry[]
+}
+
+model MemberMinistry {
+  memberId   String
+  ministryId String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  ministry   Ministry @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime @default(now())
+
+  @@id([memberId, ministryId])
+}
+
+model Interest {
+  id      String           @id @default(cuid())
+  name    String           @unique
+  members MemberInterest[]
+}
+
+model MemberInterest {
+  memberId   String
+  interestId String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, interestId])
+}
+
+// ─────────────────────────────────────────────────────────── finance: structure
+
+enum FundClass {
+  UNRESTRICTED
+  TEMPORARILY_RESTRICTED
+  PERMANENTLY_RESTRICTED
+}
+
+model Fund {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  name           String
+  fundClass      FundClass @default(UNRESTRICTED)
+  description    String?
+  openingBalance Float     @default(0)
+  openingDate    DateTime?
+  is18aEligible  Boolean   @default(false) // OFF by default — tithes are not 18A deductible
+  isActive       Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  transactions      Transaction[]
+  contributionLines ContributionLine[]
+  budgetLines       BudgetLine[]
+  assets            Asset[]
+  transfersOut      FundTransfer[]     @relation("TransferFrom")
+  transfersIn       FundTransfer[]     @relation("TransferTo")
+  receipts18a       Receipt18A[]
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  NET_ASSET
+  INCOME
+  EXPENSE
+}
+
+model Account {
+  id        String      @id @default(cuid())
+  code      String      @unique
+  name      String
+  type      AccountType
+  parentId  String?
+  parent    Account?    @relation("AccountTree", fields: [parentId], references: [id])
+  children  Account[]   @relation("AccountTree")
+  isActive  Boolean     @default(true)
+  notes     String?
+  createdAt DateTime    @default(now())
+
+  transactions      Transaction[]
+  contributionLines ContributionLine[]
+  budgetLines       BudgetLine[]
+  assets            Asset[]
+
+  @@index([type])
+}
+
+// ─────────────────────────────────────────────────────────── finance: movement
+
+enum TxType {
+  RECEIPT
+  PAYMENT
+  JOURNAL
+  TRANSFER
+}
+
+enum PayMethod {
+  CASH
+  EFT
+  CARD
+  CHEQUE
+  IN_KIND
+  DEBIT_ORDER
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  date        DateTime
+  type        TxType
+  reference   String?
+  description String
+  amount      Float // always positive; `type` carries the direction
+  method      PayMethod @default(CASH)
+
+  fundId    String
+  fund      Fund    @relation(fields: [fundId], references: [id])
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  payee       String? // supplier / recipient for payments
+  batchId     String?
+  batch       Batch?  @relation(fields: [batchId], references: [id])
+  transferId  String?
+  transfer    FundTransfer? @relation(fields: [transferId], references: [id])
+
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id])
+  postedAt    DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([date])
+  @@index([fundId])
+  @@index([accountId])
+  @@index([type])
+}
+
+model FundTransfer {
+  id          String   @id @default(cuid())
+  date        DateTime
+  amount      Float
+  reason      String
+  fromFundId  String
+  fromFund    Fund     @relation("TransferFrom", fields: [fromFundId], references: [id])
+  toFundId    String
+  toFund      Fund     @relation("TransferTo", fields: [toFundId], references: [id])
+  createdAt   DateTime @default(now())
+
+  transactions Transaction[]
+}
+
+// counted offering batches — the church's main internal control
+enum BatchStatus {
+  DRAFT
+  COUNTED
+  REVIEWED
+  POSTED
+}
+
+model Batch {
+  id           String      @id @default(cuid())
+  batchNumber  String      @unique
+  serviceDate  DateTime
+  serviceName  String      @default("Sunday Service")
+  status       BatchStatus @default(DRAFT)
+  expectedTotal Float?     // declared before counting, for variance check
+  notes        String?
+
+  counter1Name String?
+  counter2Name String?
+  countedAt    DateTime?
+
+  createdById  String?
+  createdBy    User?     @relation("BatchCreatedBy", fields: [createdById], references: [id])
+  reviewedById String?
+  reviewedBy   User?     @relation("BatchReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  postedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines        ContributionLine[]
+  transactions Transaction[]
+
+  @@index([serviceDate])
+  @@index([status])
+}
+
+model ContributionLine {
+  id        String    @id @default(cuid())
+  batchId   String
+  batch     Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  memberId  String? // null = loose / anonymous
+  member    Member?   @relation(fields: [memberId], references: [id])
+  fundId    String
+  fund      Fund      @relation(fields: [fundId], references: [id])
+  accountId String
+  account   Account   @relation(fields: [accountId], references: [id])
+  amount    Float
+  method    PayMethod @default(CASH)
+  reference String? // envelope number or EFT reference
+  note      String?
+  createdAt DateTime  @default(now())
+
+  @@index([batchId])
+  @@index([memberId])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  name      String
+  yearStart DateTime
+  yearEnd   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  lines     BudgetLine[]
+}
+
+model BudgetLine {
+  id        String  @id @default(cuid())
+  budgetId  String
+  budget    Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+  fundId    String?
+  fund      Fund?   @relation(fields: [fundId], references: [id])
+  amount    Float // annual budget
+
+  @@unique([budgetId, accountId, fundId])
+}
+
+// ─────────────────────────────────────────────────────────── assets
+
+enum AssetCategory {
+  LAND_AND_BUILDINGS
+  FURNITURE_AND_FITTINGS
+  MUSICAL_AND_SOUND
+  IT_EQUIPMENT
+  VEHICLES
+  KITCHEN_EQUIPMENT
+  BOOKS_AND_MEDIA
+  OTHER
+}
+
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+  UNSERVICEABLE
+}
+
+enum AssetStatus {
+  IN_USE
+  IN_STORAGE
+  UNDER_REPAIR
+  ON_LOAN
+  DISPOSED
+  WRITTEN_OFF
+}
+
+enum AcquisitionMethod {
+  PURCHASED
+  DONATED
+  BUILT
+}
+
+enum DisposalMethod {
+  SOLD
+  SCRAPPED
+  DONATED
+  STOLEN
+  DESTROYED
+}
+
+model Asset {
+  id           String  @id @default(cuid())
+  assetCode    String  @unique
+  description  String
+  makeModel    String?
+  serialNumber String?
+  photoPath    String?
+
+  category  AssetCategory
+  accountId String?
+  account   Account?      @relation(fields: [accountId], references: [id])
+  fundId    String?
+  fund      Fund?         @relation(fields: [fundId], references: [id])
+
+  acquisitionDate   DateTime
+  acquisitionCost   Float
+  acquisitionMethod AcquisitionMethod @default(PURCHASED)
+  supplier          String?
+  invoiceRef        String?
+  donorName         String?
+
+  location    String?
+  custodianId String?
+  custodian   Member? @relation(fields: [custodianId], references: [id])
+  ministry    String?
+
+  usefulLifeYears Int     @default(5)
+  residualValue   Float   @default(0)
+  insuredValue    Float?
+  insurancePolicyRef String?
+  warrantyExpiry  DateTime?
+
+  condition AssetCondition @default(GOOD)
+  status    AssetStatus    @default(IN_USE)
+
+  lastVerifiedAt DateTime?
+  lastVerifiedBy String?
+
+  disposalDate      DateTime?
+  disposalMethod    DisposalMethod?
+  disposalProceeds  Float?
+  approvalReference String? // council resolution / minute number
+  approvedBy        String?
+  disposalNotes     String?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  verifications Verification[]
+
+  @@index([category])
+  @@index([status])
+  @@index([location])
+}
+
+enum StocktakeStatus {
+  OPEN
+  IN_PROGRESS
+  REVIEW
+  CLOSED
+}
+
+model Stocktake {
+  id         String          @id @default(cuid())
+  name       String
+  cutoffDate DateTime
+  scopeNote  String?
+  status     StocktakeStatus @default(OPEN)
+  openedAt   DateTime        @default(now())
+  closedAt   DateTime?
+  notes      String?
+
+  verifications Verification[]
+}
+
+enum VerificationOutcome {
+  FOUND
+  MISSING
+  MOVED
+  UNRECORDED
+  DAMAGED
+}
+
+model Verification {
+  id          String              @id @default(cuid())
+  stocktakeId String
+  stocktake   Stocktake           @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  assetId     String
+  asset       Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  outcome     VerificationOutcome
+  condition   AssetCondition?
+  foundLocation String?
+  notes       String?
+  verifiedById String?
+  verifiedBy  User?               @relation(fields: [verifiedById], references: [id])
+  verifiedAt  DateTime            @default(now())
+
+  @@unique([stocktakeId, assetId])
+}
+
+// ─────────────────────────────────────────────────────────── planner & sacraments
+
+enum EventCategory {
+  SERVICE
+  MEETING
+  OUTREACH
+  FUNDRAISING
+  CONFERENCE
+  BAPTISM
+  YOUTH
+  WOMEN
+  MEN
+  CHILDREN
+  OTHER
+}
+
+model Event {
+  id          String        @id @default(cuid())
+  title       String
+  category    EventCategory @default(SERVICE)
+  startsAt    DateTime
+  endsAt      DateTime?
+  allDay      Boolean       @default(false)
+  location    String?
+  description String?
+  leader      String?
+  isRecurring Boolean       @default(false)
+  recurrence  String? // WEEKLY | MONTHLY | YEARLY
+  colorKey    String? 
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([startsAt])
+}
+
+model AttendanceRegister {
+  id          String            @id @default(cuid())
+  serviceDate DateTime
+  serviceName String            @default("Sunday Service")
+  headcount   Int? // for when individual register isn't kept
+  notes       String?
+  createdAt   DateTime          @default(now())
+  entries     AttendanceEntry[]
+
+  @@index([serviceDate])
+}
+
+model AttendanceEntry {
+  id         String             @id @default(cuid())
+  registerId String
+  register   AttendanceRegister @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  present    Boolean            @default(true)
+
+  @@unique([registerId, memberId])
+}
+
+enum BaptismStatus {
+  CANDIDATE
+  CLASS_IN_PROGRESS
+  APPROVED
+  BAPTISED
+  WITHDRAWN
+}
+
+model Baptism {
+  id        String        @id @default(cuid())
+  memberId  String?
+  member    Member?       @relation(fields: [memberId], references: [id])
+  // held separately so candidates need not be members yet
+  fullName  String
+  dob       DateTime?
+  placeOfBirth String?
+  parentNames  String?
+
+  programmeYear Int
+  status        BaptismStatus @default(CANDIDATE)
+  classStartDate DateTime?
+  baptismDate   DateTime?
+  placeOfBaptism String?
+  mode          String? // immersion / affusion
+  officiant     String?
+  witness1      String?
+  witness2      String?
+  scriptureVerse String?
+  notes         String?
+
+  registerNumber String?   @unique
+  certificateIssuedAt DateTime?
+  certificateIssuedBy String?
+  certificateReissueCount Int @default(0)
+
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([programmeYear])
+  @@index([status])
+}
