@@ -1,0 +1,49 @@
+# syntax=docker/dockerfile:1
+#
+# Operations image: migrations and backups.
+#
+# The application image uses Next.js standalone output, which prunes
+# node_modules down to what the server needs at runtime. That deliberately
+# excludes the Prisma CLI and the migrations folder, so migrations and
+# backups run from this image instead.
+
+FROM node:22-slim
+
+# postgresql-client from Debian is version 15, and pg_dump refuses to dump a
+# newer server ("server version mismatch"). Azure runs 17, so the client
+# comes from the PostgreSQL project's own repository.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      openssl ca-certificates curl gnupg \
+ && install -d /usr/share/postgresql-common/pgdg \
+ && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+      -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+ && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client-17 \
+ && apt-get purge -y curl gnupg && apt-get autoremove -y \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund --maxsockets 4 --loglevel=error
+COPY . .
+RUN npx prisma generate
+
+# Wrapper commands so the Container Apps jobs need no arguments at all.
+# `az containerapp job --args` cannot pass a value beginning with a dash —
+# argparse reads "-c" as a flag — and the documented space-separated form is
+# rejected outright. A single argument-free command sidesteps the question.
+RUN set -e; \
+    for w in "migrate:npx prisma migrate deploy" \
+             "backup:npx tsx scripts/backup.mts" \
+             "seed:npx tsx prisma/seed.ts" \
+             "go-live:npx tsx prisma/go-live.mts" \
+             "doctor:npx tsx scripts/doctor.mts"; do \
+      name="${w%%:*}"; cmd="${w#*:}"; \
+      printf '#!/bin/sh\nset -e\nexec %s\n' "$cmd" > "/usr/local/bin/run-$name"; \
+      chmod +x "/usr/local/bin/run-$name"; \
+    done
+
+ENV NODE_ENV=production
+CMD ["/usr/local/bin/run-migrate"]

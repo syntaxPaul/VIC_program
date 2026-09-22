@@ -1,6 +1,9 @@
 /**
  * Import members from the original Tkinter app's SQLite file.
  *
+ * Reads SQLite through Node's built-in `node:sqlite`, so there is no native
+ * module to compile and nothing extra to install.
+ *
  *   npx tsx prisma/import-legacy.mts ./church_members.db
  *
  * Safe to re-run: a member already imported (matched on the legacy id) is
@@ -10,13 +13,14 @@
  * accepts every format actually found in the wild and skips what it cannot
  * parse rather than guessing. Anything skipped is reported at the end.
  */
-import { createRequire } from "node:module";
 import path from "node:path";
+import { existsSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { config as loadEnv } from "dotenv";
 
-const require = createRequire(import.meta.url);
-const Database = require("better-sqlite3");
+loadEnv({ quiet: true });
 
 type LegacyRow = {
   id: number;
@@ -116,13 +120,17 @@ async function main() {
   const abs = path.resolve(file);
 
   const db = new PrismaClient({
-    adapter: new PrismaBetterSqlite3({
-      url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-    }),
+    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
   });
 
+  // node:sqlite will happily CREATE an empty database at a path that does not
+  // exist, which would look like "no members table" rather than "wrong path".
+  if (!existsSync(abs)) {
+    throw new Error(`No file at ${abs}. Check the path to church_members.db.`);
+  }
+
   console.log(`Reading ${abs}`);
-  const legacy = new Database(abs, { readonly: true, fileMustExist: true });
+  const legacy = new DatabaseSync(abs, { readOnly: true });
 
   const tableExists = legacy
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='members'")
@@ -131,7 +139,7 @@ async function main() {
     throw new Error(`No 'members' table in ${abs}. Is this the right file?`);
   }
 
-  const rows: LegacyRow[] = legacy.prepare("SELECT * FROM members").all();
+  const rows = legacy.prepare("SELECT * FROM members").all() as unknown as LegacyRow[];
   console.log(`Found ${rows.length} legacy member ${rows.length === 1 ? "record" : "records"}\n`);
 
   // continue the existing numbering rather than colliding with it

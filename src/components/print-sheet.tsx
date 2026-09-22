@@ -2,6 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { PrintButton } from "./print-button";
+import { LogoFull } from "./logo";
 import { formatDate } from "@/lib/format";
 
 /**
@@ -43,12 +44,10 @@ export async function PrintSheet({
       <header className="mb-6 border-b-2 border-black pb-4">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="font-serif text-[19px] leading-tight font-semibold">
-              {s?.churchName ?? "Victory in Christ"}
-            </h1>
-            {s?.branchName ? (
-              <p className="text-[12px] text-neutral-700">{s.branchName}</p>
-            ) : null}
+            <div className="exact-color mb-1.5">
+              <LogoFull width={168} alt={s?.churchName ?? "Victory in Christ"} />
+            </div>
+            <h1 className="sr-only">{s?.churchName ?? "Victory in Christ"}</h1>
             <p className="mt-1 text-[11px] leading-snug text-neutral-600">
               {[s?.addressLine1, s?.city, s?.province, s?.postalCode].filter(Boolean).join(", ")}
               {s?.phone ? ` · ${s.phone}` : ""}

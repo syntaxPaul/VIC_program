@@ -62,6 +62,23 @@
   --sidebar: #1C1813;
 }
 
+/*
+ * A light island inside a dark page. The sign-in window uses it so the
+ * church's logo is always shown in its printed colours instead of being
+ * knocked out to white, and so the form inside the window stays legible.
+ */
+[data-theme="light"] {
+  --surface: var(--color-sand-50);
+  --card: #ffffff;
+  --border: var(--color-sand-200);
+  --text: var(--color-sand-900);
+  --text-muted: var(--color-sand-600);
+  --brand: var(--color-bronze-600);
+  --sidebar: #ffffff;
+  color: var(--text);
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --surface: #17140F;
@@ -117,6 +134,12 @@ body {
     background: #fff !important;
     color: #000 !important;
     font-size: 10.5pt;
+    /* Inherited by everything, so a coloured cell in a report or a wall
+       chart actually reaches the paper. Setting it only on the element
+       that paints is not enough in Chrome, which is how the year planner
+       printed as an empty grid. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .no-print, nav[data-app-nav], header[data-app-header] { display: none !important; }
   .print-only { display: block !important; }

@@ -33,7 +33,6 @@ export async function saveSettings(formData: FormData) {
 
   const data = {
     churchName: str(formData, "churchName") ?? "Victory in Christ",
-    branchName: str(formData, "branchName") ?? "",
     addressLine1: str(formData, "addressLine1") ?? "",
     city: str(formData, "city") ?? "",
     province: str(formData, "province") ?? "",

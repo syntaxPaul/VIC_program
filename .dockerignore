@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+storage
+src/generated
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store
+README.md
+deploy
+legacy

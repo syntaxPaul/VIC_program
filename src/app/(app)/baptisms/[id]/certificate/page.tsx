@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatDateCeremonial, formatDate } from "@/lib/format";
 import { PrintBar } from "@/components/print-sheet";
+import { LogoFull } from "@/components/logo";
 
 export default async function CertificatePage({
   params,
@@ -16,11 +18,31 @@ export default async function CertificatePage({
 
   if (!b) notFound();
 
+  // A certificate states that a baptism took place. Reaching this page for a
+  // candidate who has not yet been baptised would print one with the date and
+  // register number blank — a document that should not exist, and one that
+  // could be signed by hand later. The button that leads here is only shown
+  // for a completed baptism; this guards the URL itself.
+  if (b.status !== "BAPTISED" || !b.baptismDate) {
+    return (
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <h1 className="font-serif text-[24px] font-semibold">Not yet baptised</h1>
+        <p className="mt-2 text-[14px] text-[var(--text-muted)]">
+          A certificate can only be printed once {b.fullName}&rsquo;s baptism has
+          taken place and the date has been recorded.
+        </p>
+        <Link
+          href={`/baptisms/${b.id}`}
+          className="mt-6 inline-block text-[13px] text-bronze-600 hover:underline dark:text-bronze-300"
+        >
+          ← Back to the record
+        </Link>
+      </div>
+    );
+  }
+
   const church = s?.churchName ?? "Victory in Christ";
-  const place =
-    b.placeOfBaptism ??
-    [s?.branchName, s?.city].filter(Boolean).join(", ") ??
-    "";
+  const place = b.placeOfBaptism ?? s?.city ?? "";
   const isDuplicate = b.certificateReissueCount > 0;
 
   return (
@@ -41,16 +63,9 @@ export default async function CertificatePage({
                 </p>
               ) : null}
 
-              <div className="mx-auto mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-[#7A5C2E] text-[19px] text-white">
-                ✝
+              <div className="exact-color mx-auto mb-2 flex justify-center">
+                <LogoFull width={230} alt={church} />
               </div>
-
-              <p className="font-serif text-[15px] tracking-[0.12em] text-neutral-700 uppercase">
-                {church}
-              </p>
-              {s?.branchName ? (
-                <p className="text-[11px] tracking-wide text-neutral-500">{s.branchName}</p>
-              ) : null}
 
               <h1 className="mt-6 font-serif text-[40px] leading-none font-semibold tracking-wide text-[#7A5C2E]">
                 Certificate of Baptism

@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // ─────────────────────────────────────────────────────────── users & access
@@ -35,6 +35,7 @@ model User {
   transactions    Transaction[]
   verifications   Verification[]
   auditLogs       AuditLog[]
+  pastoralNotes   PastoralNote[]
 }
 
 model AuditLog {
@@ -56,7 +57,6 @@ model AuditLog {
 model Settings {
   id                    Int      @id @default(1)
   churchName            String   @default("Victory in Christ")
-  branchName            String   @default("")
   addressLine1          String   @default("")
   addressLine2          String   @default("")
   city                  String   @default("")
@@ -211,6 +211,50 @@ model Receipt18A {
 
   @@index([donationDate])
   @@index([memberId])
+}
+
+/**
+ * The pastor's notebook: sermon ideas, meeting notes, reminders — anything
+ * not tied to a member record.
+ *
+ * Readable by any user with the Pastor role and by administrators. Notes
+ * marked confidential are never included in exports and are collapsed
+ * behind a reveal in the interface, so a shared screen does not give a
+ * counselling matter away.
+ */
+enum NoteCategory {
+  GENERAL
+  SERMON
+  MEETING
+  VISIT
+  PRAYER
+  FOLLOW_UP
+}
+
+model PastoralNote {
+  id         String       @id @default(cuid())
+  title      String
+  body       String
+  category   NoteCategory @default(GENERAL)
+  noteDate   DateTime     @default(now())
+
+  confidential Boolean @default(false)
+  pinned       Boolean @default(false)
+
+  /// Free-text tags, comma separated. Deliberately not a join table — a
+  /// notebook wants to be quick to write in, not carefully classified.
+  tags String?
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([noteDate])
+  @@index([authorId])
+  @@index([category])
 }
 
 model Household {

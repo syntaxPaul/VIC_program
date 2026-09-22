@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { today } from "@/lib/demo";
 import { enumLabel, formatDate } from "@/lib/format";
-import { MonthCalendar, CATEGORY_COLOR } from "@/components/calendar";
+import { MonthCalendar } from "@/components/calendar";
 import { PrintBar, PrintSheet } from "@/components/print-sheet";
 
 export default async function PrintablePlanner({

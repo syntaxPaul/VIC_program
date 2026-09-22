@@ -41,9 +41,6 @@ export default async function SettingsPage({
             <Field label="Church name">
               <Input name="churchName" required defaultValue={s?.churchName ?? ""} />
             </Field>
-            <Field label="Branch" optional>
-              <Input name="branchName" defaultValue={s?.branchName ?? ""} />
-            </Field>
             <Field label="Street address" optional className="sm:col-span-2">
               <Input name="addressLine1" defaultValue={s?.addressLine1 ?? ""} />
             </Field>

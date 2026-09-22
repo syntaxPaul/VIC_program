@@ -23,6 +23,7 @@ export const NAV: NavSection[] = [
       { label: "Ministries", href: "/ministries", area: "members", icon: "HeartHandshake" },
       { label: "Attendance", href: "/attendance", area: "members", icon: "ClipboardCheck" },
       { label: "Baptisms", href: "/baptisms", area: "sacraments", icon: "Droplets" },
+      { label: "Notebook", href: "/notes", area: "notes", icon: "NotebookPen" },
     ],
   },
   {
@@ -54,10 +55,10 @@ export const NAV: NavSection[] = [
 ];
 
 const PERMISSIONS: Record<Role, readonly string[]> = {
-  ADMIN: ["members", "finance", "assets", "planner", "sacraments", "reports", "settings", "users"],
+  ADMIN: ["members", "finance", "assets", "planner", "sacraments", "reports", "settings", "users", "notes"],
   TREASURER: ["members:read", "finance", "assets", "reports", "planner:read", "sacraments:read"],
   SECRETARY: ["members", "planner", "sacraments", "reports:read", "finance:read", "assets:read"],
-  PASTOR: ["members:read", "finance:read", "assets:read", "planner:read", "sacraments", "reports:read"],
+  PASTOR: ["members:read", "finance:read", "assets:read", "planner:read", "sacraments", "reports:read", "notes"],
 };
 
 export function visibleNav(role: Role, is18aApproved = false): NavSection[] {

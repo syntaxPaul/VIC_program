@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui";
+import { CATEGORY_COLOR } from "@/lib/event-colors";
+
+// re-exported so existing imports keep working
+export { CATEGORY_COLOR };
 
 export type CalEvent = {
   id: string;
@@ -15,21 +19,6 @@ export type CalEvent = {
   location: string | null;
 };
 
-/** Category colours — also used by the printed calendar, so they must
- *  stay distinguishable in greyscale. */
-export const CATEGORY_COLOR: Record<string, string> = {
-  SERVICE: "#7A5C2E",
-  MEETING: "#4A6FA5",
-  OUTREACH: "#2F6F6B",
-  FUNDRAISING: "#B4642E",
-  CONFERENCE: "#6B4A7A",
-  BAPTISM: "#2F6F6B",
-  YOUTH: "#8C5A3C",
-  WOMEN: "#A03C6B",
-  MEN: "#3C5A8C",
-  CHILDREN: "#5F7A4A",
-  OTHER: "#6F6558",
-};
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 

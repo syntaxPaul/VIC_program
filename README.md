@@ -9,9 +9,17 @@ register, a church planner and the baptism programme.
 
 ## Running it
 
+Deploying for a real congregation? See **[DEPLOYMENT.md](DEPLOYMENT.md)** and
+work through **[GO-LIVE-CHECKLIST.md](GO-LIVE-CHECKLIST.md)**.
+
+For local development you need PostgreSQL:
+
 ```bash
+docker run -d --name vic-pg -e POSTGRES_PASSWORD=vicdev \
+  -e POSTGRES_USER=vic -e POSTGRES_DB=church -p 5432:5432 postgres:17
+
+cp .env.example .env      # defaults match the container above
 npm install
-cp .env.example .env      # then edit AUTH_SECRET
 npx prisma migrate deploy
 npx prisma generate
 npx tsx prisma/seed.ts    # optional: demo data
@@ -136,8 +144,9 @@ question for the accounting officer, not for the software.
 | | |
 |---|---|
 | Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Hosting | Azure Container Apps, South Africa North |
 | Styling | Tailwind CSS v4, custom design tokens |
-| Database | SQLite via Prisma 7 (driver adapter) |
+| Database | PostgreSQL via Prisma 7 (driver adapter) |
 | Auth | JWT session cookie, bcrypt, four roles |
 | Charts | Recharts |
 
@@ -153,20 +162,6 @@ alone. Light and dark themes both ship.
 Every long form is a single column of sectioned cards with a sticky save bar,
 not a wizard. Tables pin a totals row. `⌘K` opens a command palette that jumps
 to any page, member or asset.
-
-### Switching to PostgreSQL
-
-SQLite is genuinely fine for a single congregation — thousands of members, tens
-of thousands of transactions. If you want to host on Vercel, which has no
-persistent disk, switch to Postgres:
-
-1. `prisma/schema.prisma` → `provider = "postgresql"`
-2. `npm i @prisma/adapter-pg` and swap the adapter in `src/lib/db.ts`
-3. Point `DATABASE_URL` at Neon or Supabase (both have free tiers)
-4. `npx prisma migrate dev --name init`
-
-Otherwise deploy to Railway, Fly.io or any VPS with a mounted volume and keep
-SQLite.
 
 ### Data model notes
 

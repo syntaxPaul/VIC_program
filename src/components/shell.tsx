@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import type { NavSection } from "./nav-config";
 import { CommandPalette } from "./command-palette";
+import { LogoFull, LogoMark } from "./logo";
 
 function Icon({ name, size = 17 }: { name: string; size?: number }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[name];
@@ -18,13 +19,11 @@ export function Shell({
   nav,
   user,
   churchName,
-  branchName,
   children,
 }: {
   nav: NavSection[];
   user: { name: string; role: string };
   churchName: string;
-  branchName: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -101,18 +100,25 @@ export function Shell({
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className={cn("flex h-14 items-center gap-2.5 border-b px-3", collapsed && "justify-center px-0")}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bronze-600 text-[13px] font-bold text-white">
-            ✝
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-[13.5px] leading-tight font-semibold">{churchName}</p>
-              {branchName ? (
-                <p className="truncate text-[11.5px] text-[var(--text-muted)]">{branchName}</p>
-              ) : null}
-            </div>
+        {/* Expanded, there is room for the real lockup; collapsed, only the
+            mark fits. Neither needs the church's name set in type beside it —
+            the artwork carries it. */}
+        <div
+          className={cn(
+            "flex flex-col justify-center gap-1 border-b px-3 py-3",
+            collapsed ? "h-14 items-center px-0" : "min-h-14",
           )}
+        >
+          {/* The logo is drawn for white paper, so in dark mode it sits on a
+              light plate instead of being recoloured. In light mode the
+              sidebar is already white and the plate is invisible. */}
+          <span className="inline-flex items-center justify-center rounded-xl bg-white px-2 py-1.5">
+            {collapsed ? (
+              <LogoMark size={28} className="shrink-0" />
+            ) : (
+              <LogoFull width={116} alt={churchName} />
+            )}
+          </span>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-3">

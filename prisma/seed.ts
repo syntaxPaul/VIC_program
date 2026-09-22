@@ -1,11 +1,13 @@
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { config as loadEnv } from "dotenv";
+
+loadEnv({ quiet: true });
 import bcrypt from "bcryptjs";
+import { ensureReferenceData } from "./reference-data";
 
 const db = new PrismaClient({
-  adapter: new PrismaBetterSqlite3({
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-  }),
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
 });
 
 const rand = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -38,6 +40,7 @@ async function main() {
     db.interest.deleteMany(),
     db.account.deleteMany(),
     db.fund.deleteMany(),
+    db.pastoralNote.deleteMany(),
     db.auditLog.deleteMany(),
     db.user.deleteMany(),
     db.settings.deleteMany(),
@@ -48,7 +51,6 @@ async function main() {
     data: {
       id: 1,
       churchName: "Victory in Christ",
-      branchName: "Mamelodi Branch",
       addressLine1: "Stand 4471, Tsamaya Avenue",
       city: "Mamelodi East",
       province: "Gauteng",
@@ -85,101 +87,28 @@ async function main() {
     seedNow.getMonth() >= 2
       ? new Date(seedNow.getFullYear(), 2, 1)
       : new Date(seedNow.getFullYear() - 1, 2, 1);
-  const fundSpec = [
-    { code: "GEN", name: "General / Operating", fundClass: "UNRESTRICTED", openingBalance: 42500, sortOrder: 1 },
-    { code: "BLD", name: "Building Fund", fundClass: "TEMPORARILY_RESTRICTED", openingBalance: 118000, sortOrder: 2 },
-    { code: "BEN", name: "Benevolence (Poor Fund)", fundClass: "TEMPORARILY_RESTRICTED", openingBalance: 9800, is18aEligible: true, sortOrder: 3 },
-    { code: "FEED", name: "Children Feeding Scheme", fundClass: "TEMPORARILY_RESTRICTED", openingBalance: 15400, is18aEligible: true, sortOrder: 4 },
-    { code: "YTH", name: "Youth Ministry", fundClass: "TEMPORARILY_RESTRICTED", openingBalance: 6200, sortOrder: 5 },
-    { code: "MIS", name: "Missions & Outreach", fundClass: "TEMPORARILY_RESTRICTED", openingBalance: 11300, sortOrder: 6 },
-  ] as const;
+  await ensureReferenceData(db as never, { openingDate: fundOpeningDate });
 
-  const funds: Record<string, string> = {};
-  for (const f of fundSpec) {
-    const created = await db.fund.create({
-      data: {
-        code: f.code,
-        name: f.name,
-        fundClass: f.fundClass,
-        openingBalance: f.openingBalance,
-        openingDate: fundOpeningDate,
-        is18aEligible: "is18aEligible" in f ? f.is18aEligible : false,
-        sortOrder: f.sortOrder,
-      },
-    });
-    funds[f.code] = created.id;
+  // Demo opening balances, so the reports have something to show.
+  const DEMO_OPENING: Record<string, number> = {
+    GEN: 42500, BLD: 118000, BEN: 9800, FEED: 15400, YTH: 6200, MIS: 11300,
+  };
+  for (const [code, openingBalance] of Object.entries(DEMO_OPENING)) {
+    await db.fund.update({ where: { code }, data: { openingBalance } });
   }
 
-  // ── chart of accounts ─────────────────────────────────────────────
-  // Every expense category named in the brief appears here.
-  const accountSpec = [
-    // assets
-    { code: "1010", name: "Cash on hand", type: "ASSET" },
-    { code: "1020", name: "Bank — current account", type: "ASSET" },
-    { code: "1030", name: "Bank — building savings", type: "ASSET" },
-    { code: "1500", name: "Fixed assets at cost", type: "ASSET" },
-    { code: "1590", name: "Accumulated depreciation", type: "ASSET" },
-    // liabilities
-    { code: "2010", name: "Accounts payable", type: "LIABILITY" },
-    { code: "2020", name: "PAYE / UIF payable", type: "LIABILITY" },
-    // net assets
-    { code: "3100", name: "Unrestricted funds", type: "NET_ASSET" },
-    { code: "3200", name: "Temporarily restricted funds", type: "NET_ASSET" },
-    // income
-    { code: "4010", name: "Tithes", type: "INCOME" },
-    { code: "4020", name: "General offerings", type: "INCOME" },
-    { code: "4030", name: "Thanksgiving & special offerings", type: "INCOME" },
-    { code: "4040", name: "Building fund donations", type: "INCOME" },
-    { code: "4050", name: "Missions donations", type: "INCOME" },
-    { code: "4060", name: "Designated donations", type: "INCOME" },
-    { code: "4070", name: "Dalmada fundraising", type: "INCOME" },
-    { code: "4075", name: "Registration fees", type: "INCOME" },
-    { code: "4080", name: "Interest income", type: "INCOME" },
-    { code: "4090", name: "Other income", type: "INCOME" },
-    // expenses — from the brief
-    { code: "5010", name: "Pastors' stipend", type: "EXPENSE" },
-    { code: "5015", name: "Honorarium — guest pastors", type: "EXPENSE" },
-    { code: "5020", name: "Housekeeper wages", type: "EXPENSE" },
-    { code: "5025", name: "Cleaners wages", type: "EXPENSE" },
-    { code: "5030", name: "Band & worship team", type: "EXPENSE" },
-    { code: "5035", name: "Music and media", type: "EXPENSE" },
-    { code: "5040", name: "Electricity & water", type: "EXPENSE" },
-    { code: "5045", name: "Transport", type: "EXPENSE" },
-    { code: "5050", name: "Repairs & maintenance", type: "EXPENSE" },
-    { code: "5055", name: "Cleaning materials", type: "EXPENSE" },
-    { code: "5060", name: "Catering & hospitality", type: "EXPENSE" },
-    { code: "5065", name: "Children feeding scheme", type: "EXPENSE" },
-    { code: "5070", name: "Appreciations & services", type: "EXPENSE" },
-    { code: "5075", name: "Offering to other churches", type: "EXPENSE" },
-    { code: "5080", name: "Tithe to main ministry", type: "EXPENSE" },
-    { code: "5085", name: "Registration & affiliation fees", type: "EXPENSE" },
-    { code: "5090", name: "Printing & stationery", type: "EXPENSE" },
-    { code: "5095", name: "Bank charges", type: "EXPENSE" },
-    { code: "5100", name: "Depreciation", type: "EXPENSE" },
-    { code: "5110", name: "Loss on asset write-off", type: "EXPENSE" },
-  ] as const;
+  const allFunds = await db.fund.findMany({ select: { id: true, code: true } });
+  const funds: Record<string, string> = Object.fromEntries(
+    allFunds.map((f) => [f.code, f.id]),
+  );
 
-  const acc: Record<string, string> = {};
-  for (const a of accountSpec) {
-    const created = await db.account.create({
-      data: { code: a.code, name: a.name, type: a.type },
-    });
-    acc[a.code] = created.id;
-  }
+  const allAccounts = await db.account.findMany({ select: { id: true, code: true } });
+  const acc: Record<string, string> = Object.fromEntries(
+    allAccounts.map((a) => [a.code, a.id]),
+  );
 
-  // ── ministries & interests ────────────────────────────────────────
-  const ministryNames = ["Children", "Youth", "Young Adults", "Adults", "Women's Fellowship", "Men's Fellowship", "Ushering", "Media"];
-  const ministries: string[] = [];
-  for (const n of ministryNames) {
-    const m = await db.ministry.create({ data: { name: n } });
-    ministries.push(m.id);
-  }
-  const interestNames = ["Choir", "Teaching", "Ushering", "Music", "Outreach", "Prayer", "Media", "Catering"];
-  const interests: string[] = [];
-  for (const n of interestNames) {
-    const i = await db.interest.create({ data: { name: n } });
-    interests.push(i.id);
-  }
+  const ministries = (await db.ministry.findMany({ select: { id: true } })).map((m) => m.id);
+  const interests = (await db.interest.findMany({ select: { id: true } })).map((i) => i.id);
 
   // ── members ───────────────────────────────────────────────────────
   const firstNames = ["Thabo","Nomsa","Sipho","Lerato","Mandla","Zanele","Kagiso","Palesa","Tshepo","Naledi","Bongani","Refilwe","Lucky","Dineo","Solomon","Precious","Andile","Boitumelo","Kabelo","Mpho","Themba","Nokuthula","Jabu","Ayanda","Sibusiso","Lindiwe","Katlego","Puleng","Neo","Tumelo","Gift","Nthabiseng","Vusi","Khanyi","Oscar","Zodwa","Peter","Basetsana","Simon","Rethabile"];
@@ -653,6 +582,38 @@ async function main() {
     });
   }
 
+  // ── the pastor's notebook ─────────────────────────────────────────
+  const pastor = await db.user.findFirstOrThrow({ where: { role: "PASTOR" } });
+  const noteSpec = [
+    ["Sunday message — Romans 6", "SERMON", false, true,
+     "Buried with him through baptism into death.\n\nThree movements:\n  1. What the old life was\n  2. What the burial means\n  3. Walking in newness of life\n\nTie back to the baptism service later this month. Keep it to 35 minutes.",
+     "romans, baptism"],
+    ["Church council — September", "MEETING", false, false,
+     "Present: all elders except M. Baloyi.\n\n· Roof repair quote accepted, work to start after the 20th\n· Feeding scheme numbers up again — 40 more parcels needed\n· Stocktake to be done before year end\n· Agreed to review the stipend in the new financial year",
+     "council, minutes"],
+    ["Visit — Tsamaya Avenue", "VISIT", true, false,
+     "Long conversation about the family situation. Agreed to follow up in two weeks and to keep this between us for now. Practical help with transport arranged through the benevolence fund.",
+     "pastoral care"],
+    ["Follow up before month end", "FOLLOW_UP", false, false,
+     "· Phone the two new families who visited\n· Confirm the guest minister for the 27th\n· Ask Grace for the mid-month figures\n· Baptism class register needs updating",
+     "reminders"],
+    ["Prayer list", "PRAYER", false, false,
+     "Ongoing:\n· Healing for those who asked after the service\n· Employment for several of the young adults\n· Wisdom for the council on the building decision",
+     ""],
+  ] as const;
+
+  for (const [title, category, confidential, pinned, body, tags] of noteSpec) {
+    await db.pastoralNote.create({
+      data: {
+        title, body, category: category as never,
+        confidential, pinned,
+        tags: tags || null,
+        noteDate: new Date(today.getFullYear(), today.getMonth(), Math.max(1, today.getDate() - Math.floor(rand(0, 20)))),
+        authorId: pastor.id,
+      },
+    });
+  }
+
   // ── attendance ────────────────────────────────────────────────────
   const attStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
   for (let d = new Date(attStart); d <= today; d.setDate(d.getDate() + 1)) {
@@ -668,10 +629,10 @@ async function main() {
 
   const counts = await Promise.all([
     db.member.count(), db.transaction.count(), db.asset.count(),
-    db.batch.count(), db.event.count(), db.baptism.count(),
+    db.batch.count(), db.event.count(), db.baptism.count(), db.pastoralNote.count(),
   ]);
   console.log(
-    `Seeded — members: ${counts[0]}, transactions: ${counts[1]}, assets: ${counts[2]}, batches: ${counts[3]}, events: ${counts[4]}, baptisms: ${counts[5]}`,
+    `Seeded — members: ${counts[0]}, transactions: ${counts[1]}, assets: ${counts[2]}, batches: ${counts[3]}, events: ${counts[4]}, baptisms: ${counts[5]}, notes: ${counts[6]}`,
   );
 }
 

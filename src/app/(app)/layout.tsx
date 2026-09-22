@@ -19,7 +19,6 @@ export default async function AppLayout({
       nav={visibleNav(session.role, settings?.is18aApproved ?? false)}
       user={{ name: session.name, role: ROLE_LABEL[session.role] }}
       churchName={settings?.churchName ?? "Victory in Christ"}
-      branchName={settings?.branchName ?? ""}
     >
       {children}
     </Shell>

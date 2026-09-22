@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Plus, Printer } from "lucide-react";
+import { CalendarRange, Plus, Printer } from "lucide-react";
 import { db } from "@/lib/db";
 import { today } from "@/lib/demo";
 import { formatDate, enumLabel } from "@/lib/format";
 import { saveEvent } from "@/lib/actions/planner";
-import { MonthCalendar, CATEGORY_COLOR } from "@/components/calendar";
+import { MonthCalendar } from "@/components/calendar";
+import { CATEGORY_COLOR } from "@/lib/event-colors";
 import {
   Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea,
 } from "@/components/ui";
@@ -49,9 +50,14 @@ export default async function PlannerPage({
         title="Church planner"
         description="Services, meetings, outreaches and special events."
         actions={
-          <Link href={`/planner/print?y=${year}&m=${month}`}>
-            <Button><Printer size={15} /> Printable calendar</Button>
-          </Link>
+          <>
+            <Link href={`/planner/year?y=${year}`}>
+              <Button><CalendarRange size={15} /> Year plan</Button>
+            </Link>
+            <Link href={`/planner/print?y=${year}&m=${month}`}>
+              <Button><Printer size={15} /> Printable calendar</Button>
+            </Link>
+          </>
         }
       />
 
