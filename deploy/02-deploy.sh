@@ -182,7 +182,11 @@ echo
 if [[ "$CODE" == "200" ]]; then
   ok "healthy"
   bold "Live at ${URL}"
-  [[ "$APP_MIN_REPLICAS" == "0" ]] && info "Scales to zero when idle, so the first request after a quiet spell takes a few seconds."
+  if [[ "$APP_MIN_REPLICAS" == "0" ]]; then
+    info "Scales to zero when idle, so the first request after a quiet spell takes a few seconds."
+  else
+    info "One replica stays running, so it answers immediately."
+  fi
 else
   warn "health check returned $CODE"
   info "Logs: az containerapp logs show -n $APP_NAME -g $RESOURCE_GROUP --tail 60 --follow"

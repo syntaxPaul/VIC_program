@@ -42,6 +42,16 @@ export default async function MemberPage({
 
   if (!member) notFound();
 
+  // A household here often shares one telephone. That is not an error to be
+  // corrected — but whoever phones should know whose number they are dialling.
+  const sharesNumber = member.phone
+    ? await db.member.findMany({
+        where: { deletedAt: null, phone: member.phone, id: { not: member.id } },
+        select: { id: true, fullName: true },
+        take: 8,
+      })
+    : [];
+
   const givingTotal = await db.contributionLine.aggregate({
     where: {
       memberId: id,
@@ -59,7 +69,7 @@ export default async function MemberPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title={member.fullName}
         description={`${member.memberNumber} · Registered ${formatDate(member.registrationDate)}`}
@@ -104,7 +114,29 @@ export default async function MemberPage({
                   </Badge>
                 </div>
                 <dl className="grid gap-x-6 gap-y-2 text-[13.5px] sm:grid-cols-2">
-                  <Detail icon={<Phone size={14} />} value={member.phone} />
+                  <Detail
+                    icon={<Phone size={14} />}
+                    value={
+                      member.phone ? (
+                        <span>
+                          {member.phone}
+                          {sharesNumber.length ? (
+                            <span className="text-[var(--text-muted)]">
+                              {" "}· shared with{" "}
+                              {sharesNumber.map((o, i) => (
+                                <span key={o.id}>
+                                  {i > 0 ? ", " : ""}
+                                  <Link href={`/members/${o.id}`} className="hover:underline">
+                                    {o.fullName}
+                                  </Link>
+                                </span>
+                              ))}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : null
+                    }
+                  />
                   <Detail icon={<Mail size={14} />} value={member.email} />
                   <Detail
                     icon={<MapPin size={14} />}
@@ -206,10 +238,10 @@ export default async function MemberPage({
                 <tbody>
                   {member.contributions.map((c) => (
                     <tr key={c.id}>
-                      <Td className="tnum">{formatDate(c.batch.serviceDate)}</Td>
-                      <Td>{c.fund.name}</Td>
-                      <Td className="text-[var(--text-muted)]">{enumLabel(c.method)}</Td>
-                      <Td numeric className="font-medium">{formatZAR(c.amount)}</Td>
+                      <Td label="Date" className="tnum">{formatDate(c.batch.serviceDate)}</Td>
+                      <Td label="Fund">{c.fund.name}</Td>
+                      <Td label="Method" className="text-[var(--text-muted)]">{enumLabel(c.method)}</Td>
+                      <Td label="Amount" numeric className="font-medium">{formatZAR(c.amount)}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -310,7 +342,13 @@ export default async function MemberPage({
   );
 }
 
-function Detail({ icon, value }: { icon: React.ReactNode; value: string | null }) {
+function Detail({
+  icon,
+  value,
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+}) {
   if (!value) return null;
   return (
     <div className="flex items-center gap-2 text-[var(--text-muted)]">

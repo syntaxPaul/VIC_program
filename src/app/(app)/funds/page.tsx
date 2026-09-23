@@ -34,7 +34,7 @@ export default async function FundsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Funds"
         description={`Fund balances for financial year ${fy.label}. A fund is a pot of money defined by purpose, not by bank account.`}
@@ -62,33 +62,33 @@ export default async function FundsPage() {
           <tbody>
             {balances.map((f) => (
               <tr key={f.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                <Td>
+                <Td label="Fund">
                   <span className="font-medium">{f.name}</span>
                   <span className="tnum ml-2 text-[12px] text-[var(--text-muted)]">{f.code}</span>
                 </Td>
-                <Td>
+                <Td label="Class">
                   <Badge tone={f.fundClass === "UNRESTRICTED" ? "neutral" : "warning"}>
                     {f.fundClass === "UNRESTRICTED" ? "Unrestricted" : "Restricted"}
                   </Badge>
                 </Td>
-                <Td numeric className="text-[var(--text-muted)]">{formatZAR(f.opening)}</Td>
-                <Td numeric className="text-success">{formatZAR(f.income)}</Td>
-                <Td numeric className="text-danger">{formatZAR(f.expense)}</Td>
-                <Td numeric className={f.transfers === 0 ? "text-[var(--text-muted)]" : ""}>
+                <Td label="Opening" numeric className="text-[var(--text-muted)]">{formatZAR(f.opening)}</Td>
+                <Td label="Income" numeric className="text-success">{formatZAR(f.income)}</Td>
+                <Td label="Expenditure" numeric className="text-danger">{formatZAR(f.expense)}</Td>
+                <Td label="Transfers" numeric className={f.transfers === 0 ? "text-[var(--text-muted)]" : ""}>
                   {f.transfers === 0 ? "—" : formatZAR(f.transfers)}
                 </Td>
-                <Td numeric className="font-semibold">{formatZAR(f.closing)}</Td>
+                <Td label="Closing" numeric className="font-semibold">{formatZAR(f.closing)}</Td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="bg-sand-50 font-semibold dark:bg-sand-800/40">
               <td className="px-4 py-2.5" colSpan={2}>Total</td>
-              <td className="tnum px-4 py-2.5 text-right">{formatZAR(totals.opening)}</td>
-              <td className="tnum px-4 py-2.5 text-right">{formatZAR(totals.income)}</td>
-              <td className="tnum px-4 py-2.5 text-right">{formatZAR(totals.expense)}</td>
-              <td className="tnum px-4 py-2.5 text-right">{formatZAR(totals.transfers)}</td>
-              <td className="tnum px-4 py-2.5 text-right">{formatZAR(totals.closing)}</td>
+              <td data-label="Opening" className="tnum px-4 py-2.5 text-right">{formatZAR(totals.opening)}</td>
+              <td data-label="Income" className="tnum px-4 py-2.5 text-right">{formatZAR(totals.income)}</td>
+              <td data-label="Expenditure" className="tnum px-4 py-2.5 text-right">{formatZAR(totals.expense)}</td>
+              <td data-label="Transfers" className="tnum px-4 py-2.5 text-right">{formatZAR(totals.transfers)}</td>
+              <td data-label="Closing" className="tnum px-4 py-2.5 text-right">{formatZAR(totals.closing)}</td>
             </tr>
           </tfoot>
         </TableWrap>

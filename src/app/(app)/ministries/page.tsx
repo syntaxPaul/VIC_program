@@ -26,7 +26,7 @@ export default async function MinistriesPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-[1200px] 2xl:max-w-[1500px]">
       <PageHeader
         title="Ministries"
         description="Groups and teams members serve in."

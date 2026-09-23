@@ -22,7 +22,7 @@ export default async function BaptismPage({
   const canIssue = b.status === "BAPTISED";
 
   return (
-    <div className="mx-auto max-w-[1000px]">
+    <div className="mx-auto max-w-[1000px] 2xl:max-w-[1240px]">
       <PageHeader
         title={b.fullName}
         description={`${b.programmeYear} baptism programme${b.registerNumber ? ` · Register ${b.registerNumber}` : ""}`}

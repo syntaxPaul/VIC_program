@@ -139,11 +139,15 @@ export function Field({
   );
 }
 
+// 16px on a phone, 14px from sm up. Safari on iPhone zooms the whole page in
+// when you tap a field whose text is smaller than 16px, and does not zoom back
+// out — which is what made the sign-in page and every form look broken on a
+// phone: the page was suddenly wider than the screen.
 const controlBase =
-  "w-full rounded-lg border bg-[var(--card)] px-3 text-sm outline-none transition-colors placeholder:text-sand-400 focus:border-bronze-500 disabled:opacity-60";
+  "w-full rounded-lg border bg-[var(--card)] px-3 text-base outline-none transition-colors placeholder:text-sand-400 focus:border-bronze-500 disabled:opacity-60 sm:text-sm";
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
-  return <input className={cn(controlBase, "h-9", className)} {...props} />;
+  return <input className={cn(controlBase, "h-11 sm:h-9", className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
@@ -152,17 +156,27 @@ export function Textarea({ className, ...props }: React.ComponentProps<"textarea
 
 export function Select({ className, children, ...props }: React.ComponentProps<"select">) {
   return (
-    <select className={cn(controlBase, "h-9 pr-8", className)} {...props}>
+    <select className={cn(controlBase, "h-11 pr-8 sm:h-9", className)} {...props}>
       {children}
     </select>
   );
 }
 
 /* ── Table ────────────────────────────────────────────────────────── */
+/**
+ * A table that turns into a list of cards on a phone.
+ *
+ * A six-column register cannot be made to fit 390 pixels, and sideways
+ * scrolling inside a page is the worst of the options — you cannot tell there
+ * is more, and you lose your place going back. Below the `sm` breakpoint the
+ * `stacked-table` rules in globals.css turn every row into a card and every
+ * cell into a labelled line. Pass `label` to each Td so the value keeps its
+ * meaning once the column heading is gone.
+ */
 export function TableWrap({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("w-full overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-sm">{children}</table>
+    <div className={cn("w-full sm:overflow-x-auto", className)}>
+      <table className="stacked-table w-full border-collapse text-sm">{children}</table>
     </div>
   );
 }
@@ -190,11 +204,13 @@ export function Th({
 export function Td({
   className,
   numeric,
+  label,
   children,
   ...props
-}: React.ComponentProps<"td"> & { numeric?: boolean }) {
+}: React.ComponentProps<"td"> & { numeric?: boolean; label?: string }) {
   return (
     <td
+      data-label={label}
       className={cn(
         "border-b px-4 py-2.5 align-middle",
         numeric && "text-right tnum",

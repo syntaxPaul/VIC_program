@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   FileBarChart, Wallet, CalendarRange, Target, Scale, UserSquare,
-  FileCheck, Package,
+  FileCheck, Package, Presentation,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { financialYearBounds } from "@/lib/finance";
@@ -9,6 +9,12 @@ import { today } from "@/lib/demo";
 import { Card, PageHeader } from "@/components/ui";
 
 const REPORTS = [
+  {
+    href: "/reports/board-pack",
+    icon: Presentation,
+    title: "Board pack",
+    blurb: "Everything the board asks for in one document — the year's figures and graphs, funds, every department against its budget, giving and what the church owns.",
+  },
   {
     href: "/reports/income-expenditure",
     icon: FileBarChart,
@@ -70,7 +76,7 @@ export default async function ReportsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1000px]">
+    <div className="mx-auto max-w-[1000px] 2xl:max-w-[1240px]">
       <PageHeader
         title="Reports"
         description={`All reports default to financial year ${fy.label} (1 March – end February) and print to A4.`}

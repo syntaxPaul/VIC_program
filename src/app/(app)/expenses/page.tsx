@@ -54,7 +54,7 @@ export default async function ExpensesPage({
   const filtered = Boolean(q || sp.account || sp.fund || sp.from || sp.to);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Expenses"
         description={`${total} payments · ${formatZAR(agg._sum.amount ?? 0)} total`}
@@ -130,24 +130,24 @@ export default async function ExpensesPage({
               <tbody>
                 {rows.map((t) => (
                   <tr key={t.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                    <Td className="tnum whitespace-nowrap">{formatDate(t.date)}</Td>
-                    <Td>
+                    <Td label="Date" className="tnum whitespace-nowrap">{formatDate(t.date)}</Td>
+                    <Td label="Description">
                       <span className="block font-medium">{t.description}</span>
                       {t.payee ? (
                         <span className="block text-[12px] text-[var(--text-muted)]">{t.payee}</span>
                       ) : null}
                     </Td>
-                    <Td>
+                    <Td label="Category">
                       <span className="tnum text-[var(--text-muted)]">{t.account.code}</span>{" "}
                       {t.account.name}
                     </Td>
-                    <Td>
+                    <Td label="Fund">
                       <Badge tone={t.fund.fundClass === "UNRESTRICTED" ? "neutral" : "warning"}>
                         {t.fund.code}
                       </Badge>
                     </Td>
-                    <Td className="text-[var(--text-muted)]">{enumLabel(t.method)}</Td>
-                    <Td numeric className="font-medium">{formatZAR(t.amount)}</Td>
+                    <Td label="Method" className="text-[var(--text-muted)]">{enumLabel(t.method)}</Td>
+                    <Td label="Amount" numeric className="font-medium">{formatZAR(t.amount)}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -156,7 +156,7 @@ export default async function ExpensesPage({
                   <td colSpan={5} className="px-4 py-2.5">
                     Total {filtered ? "(filtered)" : ""}
                   </td>
-                  <td className="tnum px-4 py-2.5 text-right">{formatZAR(agg._sum.amount ?? 0)}</td>
+                  <td data-label="Total" className="tnum px-4 py-2.5 text-right">{formatZAR(agg._sum.amount ?? 0)}</td>
                 </tr>
               </tfoot>
             </TableWrap>

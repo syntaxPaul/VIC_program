@@ -26,7 +26,7 @@ export default async function EditMemberPage({
   const action = saveMember.bind(null, id);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader title={member.fullName} description={`Editing ${member.memberNumber}`} />
       <MemberForm
         action={action}

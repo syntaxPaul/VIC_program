@@ -1,9 +1,10 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import type { PayMethod } from "@/generated/prisma";
 
 function str(fd: FormData, k: string) {
@@ -29,8 +30,7 @@ function dt(fd: FormData, k: string) {
 /* ── expenses / payments ─────────────────────────────────────────── */
 
 export async function saveExpense(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   const amount = num(formData, "amount");
   if (amount <= 0) throw new Error("Amount must be greater than zero.");
@@ -45,6 +45,7 @@ export async function saveExpense(id: string | null, formData: FormData) {
     method: (str(formData, "method") as PayMethod) ?? "EFT",
     fundId: str(formData, "fundId")!,
     accountId: str(formData, "accountId")!,
+    departmentId: str(formData, "departmentId"),
   };
 
   if (!data.fundId || !data.accountId) {
@@ -73,8 +74,7 @@ export async function saveExpense(id: string | null, formData: FormData) {
 }
 
 export async function voidTransaction(id: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   await db.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
   await db.auditLog.create({
@@ -101,8 +101,7 @@ async function nextBatchNumber(year: number) {
 }
 
 export async function createBatch(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   const serviceDate = dt(formData, "serviceDate");
   const batch = await db.batch.create({
@@ -122,8 +121,7 @@ export async function createBatch(formData: FormData) {
 }
 
 export async function addContributionLine(batchId: string, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("finance", true);
 
   const batch = await db.batch.findUniqueOrThrow({ where: { id: batchId } });
   if (batch.status === "POSTED") {
@@ -150,8 +148,7 @@ export async function addContributionLine(batchId: string, formData: FormData) {
 }
 
 export async function removeContributionLine(batchId: string, lineId: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("finance", true);
 
   const batch = await db.batch.findUniqueOrThrow({ where: { id: batchId } });
   if (batch.status === "POSTED") throw new Error("This batch is posted.");
@@ -161,8 +158,7 @@ export async function removeContributionLine(batchId: string, lineId: string) {
 }
 
 export async function advanceBatch(batchId: string, to: "COUNTED" | "REVIEWED" | "POSTED") {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   const batch = await db.batch.findUniqueOrThrow({
     where: { id: batchId },
@@ -239,8 +235,7 @@ export async function advanceBatch(batchId: string, to: "COUNTED" | "REVIEWED" |
 /* ── funds ───────────────────────────────────────────────────────── */
 
 export async function saveFund(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("finance", true);
 
   const data = {
     code: (str(formData, "code") ?? "").toUpperCase(),
@@ -262,8 +257,7 @@ export async function saveFund(id: string | null, formData: FormData) {
 }
 
 export async function transferBetweenFunds(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("finance", true);
 
   const amount = num(formData, "amount");
   const fromFundId = str(formData, "fromFundId")!;
@@ -290,8 +284,7 @@ export async function transferBetweenFunds(formData: FormData) {
 /* ── chart of accounts ───────────────────────────────────────────── */
 
 export async function saveAccount(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("finance", true);
 
   const data = {
     code: str(formData, "code") ?? "",

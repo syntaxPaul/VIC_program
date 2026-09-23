@@ -137,6 +137,32 @@ export default async function SettingsPage({
               <Input name="mainMinistryName" defaultValue={s?.mainMinistryName ?? ""} />
             </Field>
           </div>
+
+          <CardHeader
+            title="Public membership form"
+            subtitle="A link anyone can open and fill in. Submissions wait for the office; nobody joins the register on their own."
+          />
+          <div className="space-y-4 p-5">
+            <Field label="The link to share" hint="Put it on a poster, in a WhatsApp group, or read it out in a service">
+              <Input readOnly defaultValue="/apply" className="font-mono text-[13px]" />
+            </Field>
+            <label className="flex items-start gap-3 text-[13.5px]">
+              <input
+                type="checkbox"
+                name="publicFormOpen"
+                defaultChecked={s?.publicFormOpen ?? true}
+                className="mt-0.5 size-4"
+              />
+              <span>
+                <span className="font-medium">The form is open</span>
+                <span className="block text-[12.5px] leading-relaxed text-[var(--text-muted)]">
+                  Untick to close it. Anyone opening the link is then asked to
+                  contact the office instead. Worth doing if the link is ever
+                  misused — the rest of the system is unaffected.
+                </span>
+              </span>
+            </label>
+          </div>
           <div className="flex justify-end border-t px-5 py-3">
             <Button type="submit" variant="primary">Save settings</Button>
           </div>

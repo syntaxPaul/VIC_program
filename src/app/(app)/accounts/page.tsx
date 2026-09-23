@@ -60,13 +60,13 @@ export default async function AccountsPage() {
                     const act = byAccount.get(a.id);
                     return (
                       <tr key={a.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                        <Td className="tnum text-[var(--text-muted)]">{a.code}</Td>
-                        <Td>
+                        <Td label="Code" className="tnum text-[var(--text-muted)]">{a.code}</Td>
+                        <Td label="Account">
                           <span className={a.isActive ? "" : "text-[var(--text-muted)]"}>{a.name}</span>
                           {!a.isActive ? <Badge className="ml-2">Inactive</Badge> : null}
                         </Td>
-                        <Td numeric className="text-[var(--text-muted)]">{act?.count ?? "—"}</Td>
-                        <Td numeric className={act ? "font-medium" : "text-[var(--text-muted)]"}>
+                        <Td label="Entries" numeric className="text-[var(--text-muted)]">{act?.count ?? "—"}</Td>
+                        <Td label="This year" numeric className={act ? "font-medium" : "text-[var(--text-muted)]"}>
                           {act ? formatZAR(act.total) : "—"}
                         </Td>
                       </tr>
@@ -79,7 +79,7 @@ export default async function AccountsPage() {
                       <td colSpan={3} className="px-4 py-2.5">
                         Total {g.type === "INCOME" ? "income" : "expenditure"}
                       </td>
-                      <td className="tnum px-4 py-2.5 text-right">{formatZAR(groupTotal)}</td>
+                      <td data-label="This year" className="tnum px-4 py-2.5 text-right">{formatZAR(groupTotal)}</td>
                     </tr>
                   </tfoot>
                 ) : null}

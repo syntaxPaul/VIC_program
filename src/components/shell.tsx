@@ -9,6 +9,7 @@ import { initials } from "@/lib/format";
 import type { NavSection } from "./nav-config";
 import { CommandPalette } from "./command-palette";
 import { LogoFull, LogoMark } from "./logo";
+import { signOut } from "@/lib/actions/session";
 
 function Icon({ name, size = 17 }: { name: string; size?: number }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ size?: number }>>)[name];
@@ -32,7 +33,13 @@ export function Shell({
   const [paletteOpen, setPaletteOpen] = React.useState(false);
   const [theme, setTheme] = React.useState<"light" | "dark" | null>(null);
 
+  // Reading the saved theme has to happen after mount: localStorage does not
+  // exist while the server renders, and seeding the initial state from it
+  // would make the server and the browser disagree. The lint rule cannot see
+  // the difference between this and a cascading render, so it is silenced
+  // here and nowhere else.
   React.useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     const stored = (() => {
       try {
         return localStorage.getItem("vic-theme") as "light" | "dark" | null;
@@ -52,11 +59,18 @@ export function Shell({
       }
     })();
     setCollapsed(c);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
-  React.useEffect(() => {
+  // Close the drawer when the route changes. Adjusting state during render is
+  // the pattern React asks for here: an effect would paint the new page with
+  // the old menu still over it, which on a phone is a flash of the wrong thing
+  // on every single navigation.
+  const [lastPath, setLastPath] = React.useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setMobileOpen(false);
-  }, [pathname]);
+  }
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -233,7 +247,7 @@ export function Shell({
               </div>
             </div>
 
-            <form action="/api/logout" method="post">
+            <form action={signOut}>
               <button
                 className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-sand-100 dark:hover:bg-sand-800"
                 aria-label="Sign out"

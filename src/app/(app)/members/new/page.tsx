@@ -13,7 +13,7 @@ export default async function NewMemberPage() {
   const action = saveMember.bind(null, null);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Register member"
         description="A member number is assigned automatically once you save."

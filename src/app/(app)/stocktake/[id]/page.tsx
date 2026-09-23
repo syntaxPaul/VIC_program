@@ -48,7 +48,7 @@ export default async function StocktakeRoundPage({
   const record = recordVerification.bind(null, round.id);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title={round.name}
         description={`Cutoff ${formatDate(round.cutoffDate)}${round.scopeNote ? ` · ${round.scopeNote}` : ""}`}
@@ -94,8 +94,8 @@ export default async function StocktakeRoundPage({
               const v = byAsset.get(a.id);
               return (
                 <tr key={a.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                  <Td className="tnum text-[var(--text-muted)]">{a.assetCode}</Td>
-                  <Td>
+                  <Td label="Code" className="tnum text-[var(--text-muted)]">{a.assetCode}</Td>
+                  <Td label="Asset">
                     <Link href={`/assets/${a.id}`} className="font-medium hover:underline">
                       {a.description}
                     </Link>
@@ -105,18 +105,18 @@ export default async function StocktakeRoundPage({
                       </span>
                     ) : null}
                   </Td>
-                  <Td className="text-[13px]">{a.location ?? "—"}</Td>
-                  <Td numeric className="text-[var(--text-muted)]">
+                  <Td label="Expected location" className="text-[13px]">{a.location ?? "—"}</Td>
+                  <Td label="Cost" numeric className="text-[var(--text-muted)]">
                     {formatZAR(a.acquisitionCost, { decimals: false })}
                   </Td>
-                  <Td>
+                  <Td label="Outcome">
                     {v ? (
                       <Badge tone={OUTCOME_TONE[v.outcome]}>{enumLabel(v.outcome)}</Badge>
                     ) : (
                       <span className="text-[12.5px] text-[var(--text-muted)]">Not verified</span>
                     )}
                   </Td>
-                  <Td>
+                  <Td label="Record">
                     {closed ? (
                       <span className="text-[12.5px] text-[var(--text-muted)]">
                         {v ? `${formatDate(v.verifiedAt)}${v.verifiedBy ? ` · ${v.verifiedBy.name}` : ""}` : "—"}

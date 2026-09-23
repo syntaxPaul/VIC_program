@@ -30,7 +30,7 @@ export default async function LoginPage({
      * both themes so the logo is always shown in its own colours rather than
      * knocked out to fit a dark panel.
      */
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-5 py-10">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-6 sm:px-5 sm:py-10">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -46,7 +46,7 @@ export default async function LoginPage({
             even when the rest of the page is in dark mode. */}
         <div
           data-theme="light"
-          className="relative rounded-t-[999px] rounded-b-2xl border border-bronze-100 bg-white px-9 pt-16 pb-9 shadow-[0_24px_70px_-30px_rgba(47,42,36,0.45)]"
+          className="relative rounded-t-[999px] rounded-b-2xl border border-bronze-100 bg-white px-6 pt-12 pb-7 sm:px-9 sm:pt-16 sm:pb-9 [@media(max-height:500px)]:pt-9 shadow-[0_24px_70px_-30px_rgba(47,42,36,0.45)]"
         >
           {/* the window's inner glazing bar */}
           <div
@@ -55,11 +55,11 @@ export default async function LoginPage({
           />
 
           <div className="relative flex flex-col items-center">
-            <LogoFull width={176} />
+            <LogoFull width={176} className="!h-auto !w-[140px] sm:!w-[176px] [@media(max-height:500px)]:!w-[120px]" />
 
-            <div className="mt-7 h-px w-10 bg-bronze-300" />
+            <div className="mt-5 h-px w-10 bg-bronze-300 sm:mt-7" />
 
-            <h1 className="mt-6 font-serif text-[21px] leading-none font-semibold text-sand-900">
+            <h1 className="mt-4 font-serif text-[21px] sm:mt-6 leading-none font-semibold text-sand-900">
               Sign in
             </h1>
             <p className="mt-2 text-center text-[13px] text-sand-500">
@@ -76,15 +76,22 @@ export default async function LoginPage({
             </p>
           ) : null}
 
-          <form action={signIn} className="relative mt-7 space-y-4">
-            <Field label="Email">
+          <form action={signIn} className="relative mt-5 space-y-4 sm:mt-7">
+            {/* No autofocus: on a phone it throws the keyboard up over the page
+                before anyone has seen it. Plain text with the email keyboard, rather than type="email":
+                sign-in names like pastor@vic have no domain ending, and a
+                phone should never auto-capitalise the first letter of one. */}
+            <Field label="Username">
               <Input
                 name="email"
-                type="email"
+                type="text"
+                inputMode="email"
                 required
-                autoFocus
-                autoComplete="email"
-                placeholder="you@church.org"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="e.g. pastor@vic"
               />
             </Field>
             <Field label="Password">
@@ -101,7 +108,7 @@ export default async function LoginPage({
           </form>
         </div>
 
-        <p className="relative mt-8 text-center font-serif text-[13.5px] leading-relaxed text-sand-500 italic">
+        <p className="relative mt-6 text-center font-serif sm:mt-8 text-[13.5px] leading-relaxed text-sand-500 italic">
           &ldquo;Moreover it is required in stewards, that a man be found
           faithful.&rdquo;
           <span className="mt-1 block text-[11.5px] tracking-[0.14em] text-sand-500/80 not-italic uppercase">
@@ -109,14 +116,6 @@ export default async function LoginPage({
           </span>
         </p>
 
-        <div className="relative mt-8 rounded-xl border border-dashed bg-[var(--card)]/70 p-3.5 text-center text-[12.5px] text-[var(--text-muted)]">
-          <p className="mb-1.5 font-medium text-[var(--text)]">Demo accounts</p>
-          <p>admin@vic.org · treasurer@vic.org · secretary@vic.org · pastor@vic.org</p>
-          <p className="mt-1">
-            Password for all:{" "}
-            <span className="font-medium text-[var(--text)]">vic2026</span>
-          </p>
-        </div>
       </main>
     </div>
   );

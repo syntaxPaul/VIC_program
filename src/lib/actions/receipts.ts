@@ -1,9 +1,10 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import type { DonorNature } from "@/generated/prisma";
 
 function str(fd: FormData, k: string) {
@@ -28,8 +29,7 @@ async function nextReceiptNumber() {
 }
 
 export async function issue18aReceipt(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   const settings = await db.settings.findFirst();
   if (!settings?.is18aApproved) {
@@ -103,8 +103,7 @@ export async function issue18aReceipt(formData: FormData) {
 
 /** Receipts are never deleted — a cancelled one stays in the register. */
 export async function cancelReceipt(id: string, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("finance", true);
 
   const reason = str(formData, "cancelledReason");
   if (!reason) throw new Error("A reason is required to cancel a receipt.");

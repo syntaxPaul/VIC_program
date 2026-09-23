@@ -40,6 +40,12 @@ async function main() {
     db.interest.deleteMany(),
     db.account.deleteMany(),
     db.fund.deleteMany(),
+    db.membershipApplication.deleteMany(),
+    db.welfareGrant.deleteMany(),
+    db.childrensActivity.deleteMany(),
+    db.youthMeeting.deleteMany(),
+    db.outreach.deleteMany(),
+    db.consecration.deleteMany(),
     db.pastoralNote.deleteMany(),
     db.auditLog.deleteMany(),
     db.user.deleteMany(),
@@ -76,6 +82,8 @@ async function main() {
       { email: "treasurer@vic.org", name: "Grace Mokoena", passwordHash: pw, role: "TREASURER" },
       { email: "secretary@vic.org", name: "Thandi Sithole", passwordHash: pw, role: "SECRETARY" },
       { email: "pastor@vic.org", name: "Ps. Samuel Dube", passwordHash: pw, role: "PASTOR" },
+      { email: "discipleship@vic.org", name: "Lerato Mahlangu", passwordHash: pw, role: "DISCIPLESHIP" },
+      { email: "evangelist@vic.org", name: "Jabu Nkosi", passwordHash: pw, role: "EVANGELIST" },
     ],
   });
   const admin = await db.user.findFirstOrThrow({ where: { role: "ADMIN" } });
@@ -376,6 +384,9 @@ async function main() {
       name: `${fyStart.getFullYear()}/${String((fyStart.getFullYear() + 1) % 100).padStart(2, "0")} Annual Budget`,
       yearStart: fyStart,
       yearEnd: new Date(fyStart.getFullYear() + 1, 1, 28, 23, 59, 59),
+      status: "APPROVED",
+      approvedAt: new Date(fyStart.getFullYear(), fyStart.getMonth(), 12),
+      approvedBy: "Church council",
     },
   });
   const budgetSpec: [string, number][] = [
@@ -390,6 +401,62 @@ async function main() {
       data: { budgetId: budget.id, accountId: acc[code], amount },
     });
   }
+
+  // ── membership forms from the public link ─────────────────────────
+  const someMember = await db.member.findFirstOrThrow({
+    where: { deletedAt: null },
+    orderBy: { memberNumber: "asc" },
+  });
+
+  await db.membershipApplication.createMany({
+    data: [
+      {
+        surname: "Mabaso",
+        fullName: "Nomsa Mabaso",
+        dob: new Date(1994, 4, 18),
+        gender: "FEMALE",
+        maritalStatus: "SINGLE",
+        phone: "082 551 0099",
+        email: "nomsa.mabaso@gmail.com",
+        addressLine: "12 Tsamaya Avenue",
+        city: "Mamelodi East",
+        province: "Gauteng",
+        postalCode: "0122",
+        salvationDate: new Date(2024, 10, 3),
+        interestedIn: "Choir or worship team, Ushering",
+        prayerRequests: "For my mother's health, and for work.",
+        createdAt: new Date(Date.now() - 2 * 864e5),
+      },
+      {
+        surname: "Mabaso",
+        fullName: "Sipho Mabaso",
+        dob: new Date(1990, 1, 2),
+        gender: "MALE",
+        maritalStatus: "MARRIED",
+        // The same household telephone as the form above — which is normal
+        // here, and must not be treated as the same person.
+        phone: "082 551 0099",
+        city: "Mamelodi East",
+        province: "Gauteng",
+        children: "Two, aged 4 and 7",
+        interestedIn: "Men's fellowship",
+        createdAt: new Date(Date.now() - 1 * 864e5),
+      },
+      {
+        // Somebody already on the register filling the form in again.
+        surname: someMember.surname,
+        fullName: someMember.fullName,
+        dob: someMember.dob,
+        phone: someMember.phone,
+        city: someMember.city,
+        status: "HELD_DUPLICATE",
+        possibleDuplicateOfId: someMember.id,
+        duplicateReason: someMember.dob ? "Same name and date of birth" : "Same name",
+        interestedIn: "Prayer team",
+        createdAt: new Date(Date.now() - 6 * 36e5),
+      },
+    ],
+  });
 
   // ── assets ────────────────────────────────────────────────────────
   const assetSpec = [
@@ -632,7 +699,7 @@ async function main() {
     db.batch.count(), db.event.count(), db.baptism.count(), db.pastoralNote.count(),
   ]);
   console.log(
-    `Seeded — members: ${counts[0]}, transactions: ${counts[1]}, assets: ${counts[2]}, batches: ${counts[3]}, events: ${counts[4]}, baptisms: ${counts[5]}, notes: ${counts[6]}`,
+    `Seeded — members: ${counts[0]}, transactions: ${counts[1]}, assets: ${counts[2]}, batches: ${counts[3]}, events: ${counts[4]}, baptisms: ${counts[5]}, notes: ${counts[6]}, membership forms: ${await db.membershipApplication.count()}`,
   );
 }
 

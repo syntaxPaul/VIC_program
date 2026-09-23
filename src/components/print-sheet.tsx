@@ -2,6 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { PrintButton } from "./print-button";
+import { StackTables } from "./stack-tables";
 import { LogoFull } from "./logo";
 import { formatDate } from "@/lib/format";
 
@@ -36,7 +37,7 @@ export async function PrintSheet({
 
   return (
     <div
-      className={`print-sheet mx-auto bg-white p-10 text-black shadow-sm dark:bg-white ${
+      className={`print-sheet mx-auto bg-white p-5 text-black shadow-sm sm:p-10 dark:bg-white ${
         landscape ? "max-w-[1120px]" : "max-w-[820px]"
       }`}
       style={landscape ? { page: "landscape" } as React.CSSProperties : undefined}
@@ -64,7 +65,11 @@ export async function PrintSheet({
         </div>
       </header>
 
-      <div className="text-[12px]">{children}</div>
+      {/* A financial statement is as wide as it is. On a phone the table
+          scrolls inside this box rather than dragging the whole page
+          sideways, so the header and footer stay put. */}
+      <div className="w-full overflow-x-auto text-[12px]">{children}</div>
+      <StackTables within=".print-sheet" />
 
       <footer className="mt-8 flex items-center justify-between border-t pt-3 text-[10px] text-neutral-500">
         <span>

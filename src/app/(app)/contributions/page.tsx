@@ -35,7 +35,7 @@ export default async function ContributionsPage() {
   const open = batches.filter((b) => b.status !== "POSTED");
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Contributions"
         description={`${formatZAR(ytd._sum.amount ?? 0)} received year to date · FY ${fy.label}`}
@@ -71,7 +71,7 @@ export default async function ContributionsPage() {
                     const total = b.lines.reduce((s, l) => s + l.amount, 0);
                     return (
                       <tr key={b.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                        <Td>
+                        <Td label="Batch">
                           <Link
                             href={`/contributions/${b.id}`}
                             className="tnum font-medium hover:underline"
@@ -79,22 +79,22 @@ export default async function ContributionsPage() {
                             {b.batchNumber}
                           </Link>
                         </Td>
-                        <Td>
+                        <Td label="Service">
                           <span className="block text-[13.5px]">{b.serviceName}</span>
                           <span className="tnum block text-[12px] text-[var(--text-muted)]">
                             {formatDate(b.serviceDate)}
                           </span>
                         </Td>
-                        <Td className="text-[12.5px] text-[var(--text-muted)]">
+                        <Td label="Counters" className="text-[12.5px] text-[var(--text-muted)]">
                           {[b.counter1Name, b.counter2Name].filter(Boolean).join(" · ") || "—"}
                         </Td>
-                        <Td>
+                        <Td label="Status">
                           <Badge tone={STATUS_TONE[b.status]}>
                             {b.status.charAt(0) + b.status.slice(1).toLowerCase()}
                           </Badge>
                         </Td>
-                        <Td numeric className="text-[var(--text-muted)]">{b.lines.length}</Td>
-                        <Td numeric className="font-medium">{formatZAR(total)}</Td>
+                        <Td label="Lines" numeric className="text-[var(--text-muted)]">{b.lines.length}</Td>
+                        <Td label="Total" numeric className="font-medium">{formatZAR(total)}</Td>
                       </tr>
                     );
                   })}

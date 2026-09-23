@@ -76,7 +76,7 @@ export default async function AssetsPage({
   const filtered = Boolean(q || sp.category || sp.location);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Asset register"
         description="Everything the church owns, what it cost, and what it is worth today."
@@ -176,8 +176,8 @@ export default async function AssetsPage({
                 const d = depreciation(a, asAt);
                 return (
                   <tr key={a.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                    <Td className="tnum text-[var(--text-muted)]">{a.assetCode}</Td>
-                    <Td>
+                    <Td label="Code" className="tnum text-[var(--text-muted)]">{a.assetCode}</Td>
+                    <Td label="Asset">
                       <Link href={`/assets/${a.id}`} className="font-medium hover:underline">
                         {a.description}
                       </Link>
@@ -187,25 +187,25 @@ export default async function AssetsPage({
                         </span>
                       ) : null}
                     </Td>
-                    <Td className="text-[13px]">{enumLabel(a.category)}</Td>
-                    <Td className="text-[13px]">{a.location ?? "—"}</Td>
-                    <Td>
+                    <Td label="Category" className="text-[13px]">{enumLabel(a.category)}</Td>
+                    <Td label="Location" className="text-[13px]">{a.location ?? "—"}</Td>
+                    <Td label="Condition">
                       <Badge tone={CONDITION_TONE[a.condition]}>{enumLabel(a.condition)}</Badge>
                     </Td>
-                    <Td numeric>{formatZAR(a.acquisitionCost, { decimals: false })}</Td>
+                    <Td label="Cost" numeric>{formatZAR(a.acquisitionCost, { decimals: false })}</Td>
                     {showDisposed ? (
-                      <Td className="text-[12.5px]">
+                      <Td label="Approval" className="text-[12.5px]">
                         <span className="block">{a.approvalReference ?? "—"}</span>
                         <span className="block text-[var(--text-muted)]">
                           {enumLabel(a.disposalMethod)} · {formatDate(a.disposalDate)}
                         </span>
                       </Td>
                     ) : (
-                      <Td numeric className="font-medium">
+                      <Td label="Book value" numeric className="font-medium">
                         {formatZAR(d.netBookValue, { decimals: false })}
                       </Td>
                     )}
-                    <Td className="tnum text-[12.5px] text-[var(--text-muted)]">
+                    <Td label="Verified" className="tnum text-[12.5px] text-[var(--text-muted)]">
                       {a.lastVerifiedAt ? formatDate(a.lastVerifiedAt) : "Never"}
                     </Td>
                   </tr>

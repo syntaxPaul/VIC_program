@@ -84,11 +84,30 @@ export function financialYearStart(now = new Date(), startMonth = 3) {
     : new Date(now.getFullYear() - 1, m, 1);
 }
 
+/**
+ * The church's departments — each runs its own work and asks for its own
+ * budget. Leaders are filled in by the administrator; they are people, not
+ * reference data.
+ */
+export const DEPARTMENTS = [
+  { code: "DISC", name: "Discipleship", description: "Baptism classes, new believers and consecrations", sortOrder: 1 },
+  { code: "CHILD", name: "Children's Ministry", description: "Children's church, Sunday school and holiday clubs", sortOrder: 2 },
+  { code: "YOUTH", name: "Youth Ministry", description: "Intermediate, youth, young adults and men, and their word study", sortOrder: 3 },
+  { code: "WELF", name: "Health & Welfare", description: "Food, clothing and care for members and the community", sortOrder: 4 },
+  { code: "EVAN", name: "Evangelism", description: "Outreach, crusades and follow-up", sortOrder: 5 },
+  { code: "MUSIC", name: "Music & Media", description: "Worship team, sound and media", sortOrder: 6 },
+  { code: "WOMEN", name: "Women's Fellowship", description: null, sortOrder: 7 },
+  { code: "MEN", name: "Men's Fellowship", description: null, sortOrder: 8 },
+  { code: "USHER", name: "Ushering & Hospitality", description: "Ushers, catering and welcome", sortOrder: 9 },
+  { code: "ADMIN", name: "Administration", description: "The office, property and running costs", sortOrder: 10 },
+] as const;
+
 type MinimalDb = {
   fund: { upsert: (a: unknown) => Promise<unknown> };
   account: { upsert: (a: unknown) => Promise<unknown> };
   ministry: { upsert: (a: unknown) => Promise<unknown> };
   interest: { upsert: (a: unknown) => Promise<unknown> };
+  department?: { upsert: (a: unknown) => Promise<unknown> };
 };
 
 /**
@@ -132,6 +151,16 @@ export async function ensureReferenceData(
 
   for (const name of INTERESTS) {
     await db.interest.upsert({ where: { name }, create: { name }, update: {} });
+  }
+
+  if (db.department) {
+    for (const d of DEPARTMENTS) {
+      await db.department.upsert({
+        where: { code: d.code },
+        create: { code: d.code, name: d.name, description: d.description, sortOrder: d.sortOrder },
+        update: {},
+      });
+    }
   }
 
   return {

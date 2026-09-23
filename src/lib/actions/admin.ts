@@ -1,5 +1,7 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -49,6 +51,7 @@ export async function saveSettings(formData: FormData) {
     capitalisationThreshold: num(formData, "capitalisationThreshold"),
     titheOutPercent: num(formData, "titheOutPercent"),
     mainMinistryName: str(formData, "mainMinistryName") ?? "",
+    publicFormOpen: formData.get("publicFormOpen") === "on",
   };
 
   await db.settings.upsert({
@@ -93,8 +96,7 @@ export async function saveUser(id: string | null, formData: FormData) {
 }
 
 export async function createMinistry(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("members", true);
 
   const name = str(formData, "name");
   if (!name) throw new Error("A name is required.");
@@ -109,8 +111,7 @@ export async function createMinistry(formData: FormData) {
 
 /** Tick individual members present on a register. */
 export async function saveAttendanceEntries(registerId: string, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("members", true);
 
   const present = new Set(formData.getAll("present").map(String));
   const all = formData.getAll("member").map(String);
@@ -137,8 +138,7 @@ export async function saveAttendanceEntries(registerId: string, formData: FormDa
 }
 
 export async function recordAttendance(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("members", true);
 
   const s = str(formData, "serviceDate");
   const serviceDate = s ? new Date(s) : new Date();

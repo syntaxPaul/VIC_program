@@ -14,7 +14,7 @@ import type { EventCategory } from "@/generated/prisma";
 
 const CATEGORIES: EventCategory[] = [
   "SERVICE", "MEETING", "OUTREACH", "FUNDRAISING", "CONFERENCE",
-  "BAPTISM", "YOUTH", "WOMEN", "MEN", "CHILDREN", "OTHER",
+  "BAPTISM", "CONSECRATION", "YOUTH", "WOMEN", "MEN", "CHILDREN", "WELFARE", "OTHER",
 ];
 
 export default async function PlannerPage({
@@ -45,7 +45,7 @@ export default async function PlannerPage({
   const action = saveEvent.bind(null, null);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Church planner"
         description="Services, meetings, outreaches and special events."

@@ -31,7 +31,7 @@ export default async function AttendanceRegisterPage({
   const present = new Map(register.entries.map((e) => [e.memberId, e.present]));
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title={register.serviceName}
         description={`${formatDate(register.serviceDate)}${

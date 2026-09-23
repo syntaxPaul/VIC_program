@@ -16,7 +16,9 @@ enum Role {
   ADMIN // full access incl. users and settings
   TREASURER // finance + assets
   SECRETARY // members, planner, sacraments
-  PASTOR // read-only across the board + sacraments
+  PASTOR // oversight: reads everything, keeps the notebook, officiates
+  DISCIPLESHIP // classes, new converts, baptism candidates, attendance
+  EVANGELIST // outreach and the people it brings in
 }
 
 model User {
@@ -55,33 +57,37 @@ model AuditLog {
 // ─────────────────────────────────────────────────────────── church settings
 
 model Settings {
-  id                    Int      @id @default(1)
-  churchName            String   @default("Victory in Christ")
-  addressLine1          String   @default("")
-  addressLine2          String   @default("")
-  city                  String   @default("")
-  province              String   @default("")
-  postalCode            String   @default("")
-  phone                 String   @default("")
-  email                 String   @default("")
-  logoPath              String   @default("")
+  id                      Int      @id @default(1)
+  churchName              String   @default("Victory in Christ")
+  addressLine1            String   @default("")
+  addressLine2            String   @default("")
+  city                    String   @default("")
+  province                String   @default("")
+  postalCode              String   @default("")
+  phone                   String   @default("")
+  email                   String   @default("")
+  logoPath                String   @default("")
   // compliance — configurable, never assumed
-  isNpoRegistered       Boolean  @default(false)
-  npoNumber             String   @default("")
-  isPboApproved         Boolean  @default(false)
-  pboNumber             String   @default("")
-  is18aApproved         Boolean  @default(false)
-  section18aNumber      String   @default("")
+  isNpoRegistered         Boolean  @default(false)
+  npoNumber               String   @default("")
+  isPboApproved           Boolean  @default(false)
+  pboNumber               String   @default("")
+  is18aApproved           Boolean  @default(false)
+  section18aNumber        String   @default("")
   // conventions
-  financialYearStartMonth Int    @default(3) // March, per SARS convention
-  currencyCode          String   @default("ZAR")
-  locale                String   @default("en-ZA")
-  capitalisationThreshold Float  @default(2000)
+  financialYearStartMonth Int      @default(3) // March, per SARS convention
+  currencyCode            String   @default("ZAR")
+  locale                  String   @default("en-ZA")
+  capitalisationThreshold Float    @default(2000)
   // tithe to main ministry
-  titheOutPercent       Float    @default(10)
-  mainMinistryName      String   @default("")
-  baptismCertificateText String  @default("")
-  updatedAt             DateTime @updatedAt
+  titheOutPercent         Float    @default(10)
+  mainMinistryName        String   @default("")
+  baptismCertificateText  String   @default("")
+  /// The public membership form can be closed without taking the app down —
+  /// a link that writes to the database unauthenticated needs a switch that
+  /// the office can reach in a hurry.
+  publicFormOpen          Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
 }
 
 // ─────────────────────────────────────────────────────────── people
@@ -131,29 +137,31 @@ model Member {
   children    String? // free text, as in the legacy app
 
   // church life
-  salvationDate           DateTime?
-  baptismDate             DateTime?
-  previousChurch          String?
-  previousChurchLocation  String?
-  prayerRequests          String?
-  notes                   String?
-  registrationDate        DateTime  @default(now())
+  salvationDate          DateTime?
+  baptismDate            DateTime?
+  previousChurch         String?
+  previousChurchLocation String?
+  prayerRequests         String?
+  notes                  String?
+  registrationDate       DateTime  @default(now())
 
   // s18A donor details — only required on the 18A path
-  idNumber       String?
-  taxRefNumber   String?
+  idNumber     String?
+  taxRefNumber String?
 
   deletedAt DateTime? // soft delete, 5-year retention
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  ministries       MemberMinistry[]
-  interests        MemberInterest[]
-  contributions    ContributionLine[]
-  baptisms         Baptism[]
-  attendance       AttendanceEntry[]
-  assetsCustodied  Asset[]
-  receipts18a      Receipt18A[]
+  ministries      MemberMinistry[]
+  interests       MemberInterest[]
+  duplicateOf     MembershipApplication[] @relation("ApplicationDuplicate")
+  welfare         WelfareGrant[]
+  contributions   ContributionLine[]
+  baptisms        Baptism[]
+  attendance      AttendanceEntry[]
+  assetsCustodied Asset[]
+  receipts18a     Receipt18A[]
 
   @@index([surname])
   @@index([status])
@@ -173,9 +181,9 @@ enum DonorNature {
 }
 
 model Receipt18A {
-  id            String      @id @default(cuid())
-  receiptNumber String      @unique
-  issuedAt      DateTime    @default(now())
+  id            String   @id @default(cuid())
+  receiptNumber String   @unique
+  issuedAt      DateTime @default(now())
   issuedBy      String?
 
   memberId String?
@@ -194,17 +202,17 @@ model Receipt18A {
   donorTradingName String?
 
   // the donation
-  donationDate  DateTime
-  amount        Float
-  isInKind      Boolean @default(false)
+  donationDate      DateTime
+  amount            Float
+  isInKind          Boolean  @default(false)
   inKindDescription String?
   inKindFairValue   Float?
 
   fundId String
   fund   Fund   @relation(fields: [fundId], references: [id])
 
-  purpose   String  @default("Used solely in carrying on the public benefit activities of the organisation.")
-  cancelled Boolean @default(false)
+  purpose         String  @default("Used solely in carrying on the public benefit activities of the organisation.")
+  cancelled       Boolean @default(false)
   cancelledReason String?
 
   createdAt DateTime @default(now())
@@ -216,7 +224,6 @@ model Receipt18A {
 /**
  * The pastor's notebook: sermon ideas, meeting notes, reminders — anything
  * not tied to a member record.
- *
  * Readable by any user with the Pastor role and by administrators. Notes
  * marked confidential are never included in exports and are collapsed
  * behind a reveal in the interface, so a shared screen does not give a
@@ -232,11 +239,11 @@ enum NoteCategory {
 }
 
 model PastoralNote {
-  id         String       @id @default(cuid())
-  title      String
-  body       String
-  category   NoteCategory @default(GENERAL)
-  noteDate   DateTime     @default(now())
+  id       String       @id @default(cuid())
+  title    String
+  body     String
+  category NoteCategory @default(GENERAL)
+  noteDate DateTime     @default(now())
 
   confidential Boolean @default(false)
   pinned       Boolean @default(false)
@@ -387,11 +394,18 @@ model Transaction {
   accountId String
   account   Account @relation(fields: [accountId], references: [id])
 
-  payee       String? // supplier / recipient for payments
-  batchId     String?
-  batch       Batch?  @relation(fields: [batchId], references: [id])
-  transferId  String?
-  transfer    FundTransfer? @relation(fields: [transferId], references: [id])
+  payee      String? // supplier / recipient for payments
+
+  /// Which department the money was spent for, so each department's budget
+  /// can be measured against what it actually spent. Optional: the electricity
+  /// bill belongs to nobody in particular.
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  batchId    String?
+  batch      Batch?        @relation(fields: [batchId], references: [id])
+  transferId String?
+  transfer   FundTransfer? @relation(fields: [transferId], references: [id])
 
   createdById String?
   createdBy   User?     @relation(fields: [createdById], references: [id])
@@ -404,18 +418,19 @@ model Transaction {
   @@index([fundId])
   @@index([accountId])
   @@index([type])
+  @@index([departmentId])
 }
 
 model FundTransfer {
-  id          String   @id @default(cuid())
-  date        DateTime
-  amount      Float
-  reason      String
-  fromFundId  String
-  fromFund    Fund     @relation("TransferFrom", fields: [fromFundId], references: [id])
-  toFundId    String
-  toFund      Fund     @relation("TransferTo", fields: [toFundId], references: [id])
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  date       DateTime
+  amount     Float
+  reason     String
+  fromFundId String
+  fromFund   Fund     @relation("TransferFrom", fields: [fromFundId], references: [id])
+  toFundId   String
+  toFund     Fund     @relation("TransferTo", fields: [toFundId], references: [id])
+  createdAt  DateTime @default(now())
 
   transactions Transaction[]
 }
@@ -429,13 +444,13 @@ enum BatchStatus {
 }
 
 model Batch {
-  id           String      @id @default(cuid())
-  batchNumber  String      @unique
-  serviceDate  DateTime
-  serviceName  String      @default("Sunday Service")
-  status       BatchStatus @default(DRAFT)
-  expectedTotal Float?     // declared before counting, for variance check
-  notes        String?
+  id            String      @id @default(cuid())
+  batchNumber   String      @unique
+  serviceDate   DateTime
+  serviceName   String      @default("Sunday Service")
+  status        BatchStatus @default(DRAFT)
+  expectedTotal Float? // declared before counting, for variance check
+  notes         String?
 
   counter1Name String?
   counter2Name String?
@@ -478,13 +493,40 @@ model ContributionLine {
   @@index([memberId])
 }
 
+enum BudgetStatus {
+  DRAFT // proposed, still being worked on
+  APPROVED // adopted by the council; what actuals are measured against
+}
+
 model Budget {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   name      String
   yearStart DateTime
   yearEnd   DateTime
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  isActive  Boolean      @default(true)
+  status    BudgetStatus @default(APPROVED)
+
+  /// When a draft was proposed from a previous year's actuals, this records
+  /// where the figures came from — a treasurer presenting a budget is always
+  /// asked "on what basis?", and the answer should be in the system.
+  basedOnYearStart DateTime?
+  upliftPercent    Float?
+
+  /// A department leader sends the draft to the treasurer when it is ready;
+  /// until then it is still being worked on and not waiting on anybody.
+  submittedAt DateTime?
+  submittedBy String?
+
+  approvedAt DateTime?
+  approvedBy String?
+  notes      String?
+
+  /// Null is the church-wide budget; otherwise the department it belongs to.
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   lines     BudgetLine[]
 }
 
@@ -499,6 +541,80 @@ model BudgetLine {
   amount    Float // annual budget
 
   @@unique([budgetId, accountId, fundId])
+}
+
+// ──────────────────────────────────────────── membership applications
+
+enum ApplicationStatus {
+  PENDING // waiting for someone in the office to look at it
+  HELD_DUPLICATE // looks like somebody already on the register
+  ACCEPTED // became a member
+  MERGED // used to update the member it duplicated
+  DECLINED
+}
+
+/// A membership form filled in from the public link.
+///
+/// Deliberately a separate table rather than a Member with a flag. Anyone
+/// with the link can write here, so nothing in it is trusted until a person
+/// in the office accepts it, and the member register stays something only
+/// staff have ever written to.
+model MembershipApplication {
+  id String @id @default(cuid())
+
+  surname       String
+  fullName      String
+  dob           DateTime?
+  gender        Gender?
+  maritalStatus MaritalStatus?
+
+  addressLine String?
+  city        String?
+  province    String?
+  postalCode  String?
+  phone       String?
+  email       String?
+  children    String?
+  idNumber    String?
+
+  salvationDate          DateTime?
+  baptismDate            DateTime?
+  previousChurch         String?
+  previousChurchLocation String?
+  prayerRequests         String?
+
+  /// Ministries and interests the person ticked, stored as names rather than
+  /// ids: the form is public and the reference data may change before anyone
+  /// reviews it.
+  interestedIn String?
+
+  status ApplicationStatus @default(PENDING)
+
+  /// Set when the submission matched somebody already on the register.
+  possibleDuplicateOfId String?
+  possibleDuplicateOf   Member? @relation("ApplicationDuplicate", fields: [possibleDuplicateOfId], references: [id])
+  duplicateReason       String?
+
+  /// A coarse fingerprint of the submitter, for rate limiting only. Never an
+  /// address in the clear — this table is filled by the public.
+  sourceHash String?
+
+  /// Cleared from the office's "recently handled" list. The decision itself
+  /// is never deleted — who accepted or declined somebody, and when, is part
+  /// of the record the church has to be able to show.
+  clearedAt DateTime?
+
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  reviewNote      String?
+  createdMemberId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([sourceHash, createdAt])
 }
 
 // ─────────────────────────────────────────────────────────── assets
@@ -571,11 +687,11 @@ model Asset {
   custodian   Member? @relation(fields: [custodianId], references: [id])
   ministry    String?
 
-  usefulLifeYears Int     @default(5)
-  residualValue   Float   @default(0)
-  insuredValue    Float?
+  usefulLifeYears    Int       @default(5)
+  residualValue      Float     @default(0)
+  insuredValue       Float?
   insurancePolicyRef String?
-  warrantyExpiry  DateTime?
+  warrantyExpiry     DateTime?
 
   condition AssetCondition @default(GOOD)
   status    AssetStatus    @default(IN_USE)
@@ -630,18 +746,18 @@ enum VerificationOutcome {
 }
 
 model Verification {
-  id          String              @id @default(cuid())
-  stocktakeId String
-  stocktake   Stocktake           @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
-  assetId     String
-  asset       Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  outcome     VerificationOutcome
-  condition   AssetCondition?
+  id            String              @id @default(cuid())
+  stocktakeId   String
+  stocktake     Stocktake           @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  assetId       String
+  asset         Asset               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  outcome       VerificationOutcome
+  condition     AssetCondition?
   foundLocation String?
-  notes       String?
-  verifiedById String?
-  verifiedBy  User?               @relation(fields: [verifiedById], references: [id])
-  verifiedAt  DateTime            @default(now())
+  notes         String?
+  verifiedById  String?
+  verifiedBy    User?               @relation(fields: [verifiedById], references: [id])
+  verifiedAt    DateTime            @default(now())
 
   @@unique([stocktakeId, assetId])
 }
@@ -659,25 +775,31 @@ enum EventCategory {
   WOMEN
   MEN
   CHILDREN
+  WELFARE
+  CONSECRATION
   OTHER
 }
 
 model Event {
-  id          String        @id @default(cuid())
-  title       String
-  category    EventCategory @default(SERVICE)
-  startsAt    DateTime
-  endsAt      DateTime?
-  allDay      Boolean       @default(false)
-  location    String?
-  description String?
-  leader      String?
-  isRecurring Boolean       @default(false)
-  recurrence  String? // WEEKLY | MONTHLY | YEARLY
-  colorKey    String? 
-  deletedAt   DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                String             @id @default(cuid())
+  welfare           WelfareGrant[]
+  childrensActivity ChildrensActivity?
+  youthMeeting      YouthMeeting?
+  outreach          Outreach?
+  title             String
+  category          EventCategory      @default(SERVICE)
+  startsAt          DateTime
+  endsAt            DateTime?
+  allDay            Boolean            @default(false)
+  location          String?
+  description       String?
+  leader            String?
+  isRecurring       Boolean            @default(false)
+  recurrence        String? // WEEKLY | MONTHLY | YEARLY
+  colorKey          String?
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([startsAt])
 }
@@ -714,36 +836,332 @@ enum BaptismStatus {
 }
 
 model Baptism {
-  id        String        @id @default(cuid())
-  memberId  String?
-  member    Member?       @relation(fields: [memberId], references: [id])
+  id           String    @id @default(cuid())
+  memberId     String?
+  member       Member?   @relation(fields: [memberId], references: [id])
   // held separately so candidates need not be members yet
-  fullName  String
-  dob       DateTime?
+  fullName     String
+  dob          DateTime?
   placeOfBirth String?
   parentNames  String?
 
-  programmeYear Int
-  status        BaptismStatus @default(CANDIDATE)
+  programmeYear  Int
+  status         BaptismStatus @default(CANDIDATE)
   classStartDate DateTime?
-  baptismDate   DateTime?
+  baptismDate    DateTime?
   placeOfBaptism String?
-  mode          String? // immersion / affusion
-  officiant     String?
-  witness1      String?
-  witness2      String?
+  mode           String? // immersion / affusion
+  officiant      String?
+  witness1       String?
+  witness2       String?
   scriptureVerse String?
-  notes         String?
+  notes          String?
 
-  registerNumber String?   @unique
-  certificateIssuedAt DateTime?
-  certificateIssuedBy String?
-  certificateReissueCount Int @default(0)
+  registerNumber          String?   @unique
+  certificateIssuedAt     DateTime?
+  certificateIssuedBy     String?
+  certificateReissueCount Int       @default(0)
 
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([programmeYear])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────── departments
+
+/// A ministry of the church that runs its own work and asks for its own money:
+/// children's church, youth, health and welfare, evangelism, music and so on.
+model Department {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String   @unique
+  description String?
+  /// The person who leads it, as the church knows them. Free text rather than a
+  /// user account, because most leaders will never sign in.
+  leaderName  String?
+  leaderPhone String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  budgets      Budget[]
+  transactions Transaction[]
+}
+
+// ─────────────────────────────────────────────────────────── health and welfare
+
+enum WelfareKind {
+  FOOD_PARCEL
+  CLOTHING
+  SCHOOL_UNIFORM
+  BLANKETS
+  TOILETRIES
+  CASH_SUPPORT
+  FUNERAL_SUPPORT
+  MEDICAL
+  OTHER
+}
+
+enum WelfareStatus {
+  PLANNED
+  GIVEN
+  CANCELLED
+}
+
+/// Help the church gives: a food parcel, clothes, blankets, a contribution to a
+/// funeral. Somebody on the register or somebody who is not.
+///
+/// Welfare is private. The office should be able to answer "what did we give
+/// this year and to how many households", not "who in the congregation needed
+/// food" — so the list can be kept confidential per record.
+model WelfareGrant {
+  id     String        @id @default(cuid())
+  kind   WelfareKind
+  status WelfareStatus @default(PLANNED)
+
+  date DateTime
+
+  /// A member, when the person is on the register.
+  memberId       String?
+  member         Member? @relation(fields: [memberId], references: [id])
+  /// Otherwise, the person as the leader knows them.
+  recipientName  String?
+  recipientPhone String?
+  household      String?
+  isMember       Boolean @default(false)
+
+  items          String
+  quantity       Int?
+  estimatedValue Float?
+
+  /// The leader who asked for it and signed it off.
+  authorisedBy String?
+  /// Given at a distribution day, outreach or other event, if so.
+  eventId      String?
+  event        Event?  @relation(fields: [eventId], references: [id])
+
+  confidential Boolean @default(true)
+  notes        String?
+
+  recordedById String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([date])
+  @@index([memberId])
+}
+
+// ─────────────────────────────────────────────────────────── children's ministry
+
+enum ChildAgeGroup {
+  NURSERY // 0–3
+  BEGINNERS // 4–6
+  PRIMARY // 7–9
+  JUNIORS // 10–12
+  ALL_AGES
+}
+
+enum ChildrensActivityKind {
+  SUNDAY_SCHOOL
+  BIBLE_CLUB
+  HOLIDAY_CLUB
+  OUTING
+  PARTY
+  CONCERT
+  CAMP
+  OTHER
+}
+
+/// A children's church session or activity. Each one sits on the church
+/// calendar through its Event, so the planner and the year wall chart show it
+/// without anybody entering it twice.
+model ChildrensActivity {
+  id       String                @id @default(cuid())
+  title    String
+  kind     ChildrensActivityKind @default(SUNDAY_SCHOOL)
+  ageGroup ChildAgeGroup         @default(ALL_AGES)
+  startsAt DateTime
+  endsAt   DateTime?
+  location String?
+  leader   String?
+  helpers  String?
+
+  lessonTitle String?
+  scripture   String?
+  memoryVerse String?
+  materials   String?
+
+  expectedChildren Int?
+  attended         Int?
+  /// Consent, transport, allergies — whatever parents were told or asked.
+  parentNotes      String?
+  notes            String?
+
+  eventId String? @unique
+  event   Event?  @relation(fields: [eventId], references: [id])
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([startsAt])
+}
+
+// ─────────────────────────────────────────────────────────── youth
+
+enum YouthDivision {
+  INTERMEDIATE
+  YOUTH
+  YOUNG_ADULTS
+  MEN
+}
+
+enum YouthMeetingKind {
+  FELLOWSHIP
+  WORD_STUDY
+  PRAYER
+  OUTREACH
+  SPORTS
+  CAMP
+  CONFERENCE
+  SOCIAL
+  OTHER
+}
+
+/// A meeting of one of the youth divisions. Word study sessions carry their
+/// passage, theme and outline, so over a year the division has a record of
+/// what it has actually studied.
+model YouthMeeting {
+  id       String           @id @default(cuid())
+  title    String
+  kind     YouthMeetingKind @default(FELLOWSHIP)
+  division YouthDivision
+  startsAt DateTime
+  endsAt   DateTime?
+  location String?
+  leader   String?
+
+  // word study
+  scripture String?
+  theme     String?
+  outline   String?
+  questions String?
+
+  attended Int?
+  notes    String?
+
+  eventId String? @unique
+  event   Event?  @relation(fields: [eventId], references: [id])
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([startsAt])
+  @@index([division])
+}
+
+// ─────────────────────────────────────────────────────────── outreach
+
+enum OutreachKind {
+  STREET_EVANGELISM
+  DOOR_TO_DOOR
+  OPEN_AIR_CRUSADE
+  HOSPITAL_VISIT
+  PRISON_VISIT
+  SCHOOL_OUTREACH
+  OLD_AGE_HOME
+  COMMUNITY_SERVICE
+  FOOD_DISTRIBUTION
+  REVIVAL
+  FOLLOW_UP_VISITS
+  OTHER
+}
+
+enum OutreachStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+/// An outreach, from the plan to what came of it. The figures that matter to
+/// the evangelist — how many were reached, how many gave their lives, how many
+/// were followed up — are recorded against it, so the year's work adds up.
+model Outreach {
+  id       String         @id @default(cuid())
+  title    String
+  kind     OutreachKind
+  status   OutreachStatus @default(PLANNED)
+  startsAt DateTime
+  endsAt   DateTime?
+  location String?
+  area     String?
+  leader   String?
+  team     String?
+  teamSize Int?
+
+  plan          String?
+  materials     String?
+  estimatedCost Float?
+
+  peopleReached Int?
+  decisions     Int?
+  followUpsDue  Int?
+  report        String?
+
+  eventId String? @unique
+  event   Event?  @relation(fields: [eventId], references: [id])
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([startsAt])
+}
+
+// ─────────────────────────────────────────────────────────── child consecration
+
+enum ConsecrationStatus {
+  REQUESTED
+  SCHEDULED
+  CONSECRATED
+  CANCELLED
+}
+
+/// A child dedicated to the Lord before the congregation. Parents ask, a date
+/// is set, the pastor officiates, and the family receives a certificate — the
+/// same shape as a baptism, for a child too young to be baptised.
+model Consecration {
+  id             String    @id @default(cuid())
+  childName      String
+  childDob       DateTime?
+  childGender    Gender?
+  fatherName     String?
+  motherName     String?
+  guardianName   String?
+  parentPhone    String?
+  parentMemberId String?
+
+  status           ConsecrationStatus @default(REQUESTED)
+  consecrationDate DateTime?
+  place            String?
+  officiant        String?
+  scripture        String?
+  witnesses        String?
+
+  registerNumber      String?   @unique
+  certificateIssuedAt DateTime?
+  certificateIssuedBy String?
+  notes               String?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([consecrationDate])
 }

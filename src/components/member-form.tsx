@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Save } from "lucide-react";
+import { IdNumberField } from "@/components/id-number-field";
 import { Button, Card, CardHeader, Field, Input, Select, Textarea } from "@/components/ui";
 import { formatDateInput } from "@/lib/format";
 import { PhotoField } from "./photo-field";
@@ -113,6 +114,9 @@ export function MemberForm({
               </Field>
               <Field label="Surname">
                 <Input name="surname" required defaultValue={values.surname ?? ""} />
+              </Field>
+              <Field label="ID number" optional className="sm:col-span-2">
+                <IdNumberField defaultValue={values.idNumber} />
               </Field>
               <Field label="Date of birth" optional>
                 <Input name="dob" type="date" defaultValue={formatDateInput(values.dob)} />
@@ -244,9 +248,6 @@ export function MemberForm({
                     Required only when issuing Section 18A receipts to this
                     person. Ordinary tithes and offerings are not 18A deductible.
                   </p>
-                  <Field label="ID number" optional>
-                    <Input name="idNumber" defaultValue={values.idNumber ?? ""} className="tnum" />
-                  </Field>
                   <Field label="Income tax reference" optional>
                     <Input name="taxRefNumber" defaultValue={values.taxRefNumber ?? ""} className="tnum" />
                   </Field>
@@ -259,7 +260,7 @@ export function MemberForm({
 
       {/* sticky save bar */}
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-[var(--card)]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1400px] 2xl:max-w-[1760px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <p className="text-[12.5px] text-[var(--text-muted)]">
             {dirty ? "Unsaved changes" : values.id ? "No changes yet" : "New member"}
           </p>

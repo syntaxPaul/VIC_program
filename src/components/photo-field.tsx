@@ -19,11 +19,16 @@ export function PhotoField({
     current ? `/api/photo/${current}` : null,
   );
   const [error, setError] = React.useState<string | null>(null);
+  // Whether a file has been chosen has to be state, not a read of the input's
+  // value during render: a ref does not cause a re-render, so the Undo button
+  // was appearing and disappearing a beat late.
+  const [chosen, setChosen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     setError(null);
+    setChosen(false);
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -37,11 +42,13 @@ export function PhotoField({
       return;
     }
     setPreview(URL.createObjectURL(file));
+    setChosen(true);
   }
 
   function clear() {
     setPreview(current ? `/api/photo/${current}` : null);
     setError(null);
+    setChosen(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -78,7 +85,7 @@ export function PhotoField({
             JPEG, PNG, WebP or GIF · up to 5 MB
           </p>
           {error ? <p className="mt-1 text-[12px] text-danger">{error}</p> : null}
-          {inputRef.current?.value ? (
+          {chosen ? (
             <button
               type="button"
               onClick={clear}

@@ -6,9 +6,10 @@ import { today } from "@/lib/demo";
 import { Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
 
 export default async function NewExpensePage() {
-  const [accounts, funds] = await Promise.all([
+  const [accounts, funds, departments] = await Promise.all([
     db.account.findMany({ where: { type: "EXPENSE", isActive: true }, orderBy: { code: "asc" } }),
     db.fund.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    db.department.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
   ]);
 
   const action = saveExpense.bind(null, null);
@@ -23,7 +24,7 @@ export default async function NewExpensePage() {
       <form action={action}>
         <Card>
           <CardHeader title="Payment details" />
-          <div className="grid gap-4 p-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
             <Field label="Date">
               <Input name="date" type="date" required defaultValue={formatDateInput(today())} />
             </Field>
@@ -45,6 +46,15 @@ export default async function NewExpensePage() {
                 <option value="" disabled>Choose a fund…</option>
                 {funds.map((f) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Department" optional hint="So it counts against that department's budget">
+              <Select name="departmentId" defaultValue="">
+                <option value="">Church-wide</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </Select>
             </Field>

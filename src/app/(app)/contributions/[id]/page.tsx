@@ -52,7 +52,7 @@ export default async function BatchPage({
   const addLine = addContributionLine.bind(null, batch.id);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title={`Batch ${batch.batchNumber}`}
         description={`${batch.serviceName} · ${formatDate(batch.serviceDate)}`}
@@ -137,7 +137,7 @@ export default async function BatchPage({
                 <tbody>
                   {batch.lines.map((l) => (
                     <tr key={l.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                      <Td>
+                      <Td label="Giver">
                         {l.member ? (
                           <Link href={`/members/${l.member.id}`} className="font-medium hover:underline">
                             {l.member.fullName}
@@ -148,11 +148,11 @@ export default async function BatchPage({
                           </span>
                         )}
                       </Td>
-                      <Td><Badge tone="brand">{l.fund.code}</Badge></Td>
-                      <Td className="text-[13px]">{l.account.name}</Td>
-                      <Td className="text-[var(--text-muted)]">{enumLabel(l.method)}</Td>
-                      <Td className="tnum text-[12.5px] text-[var(--text-muted)]">{l.reference ?? "—"}</Td>
-                      <Td numeric className="font-medium">{formatZAR(l.amount)}</Td>
+                      <Td label="Fund"><Badge tone="brand">{l.fund.code}</Badge></Td>
+                      <Td label="Category" className="text-[13px]">{l.account.name}</Td>
+                      <Td label="Method" className="text-[var(--text-muted)]">{enumLabel(l.method)}</Td>
+                      <Td label="Ref" className="tnum text-[12.5px] text-[var(--text-muted)]">{l.reference ?? "—"}</Td>
+                      <Td label="Amount" numeric className="font-medium">{formatZAR(l.amount)}</Td>
                       {!locked ? (
                         <Td className="w-10">
                           <form action={removeContributionLine.bind(null, batch.id, l.id)}>
@@ -172,7 +172,7 @@ export default async function BatchPage({
                 <tfoot>
                   <tr className="bg-sand-50 font-semibold dark:bg-sand-800/40">
                     <td colSpan={5} className="px-4 py-2.5">Total counted</td>
-                    <td className="tnum px-4 py-2.5 text-right">{formatZAR(total)}</td>
+                    <td data-label="Total counted" className="tnum px-4 py-2.5 text-right">{formatZAR(total)}</td>
                     {!locked ? <td /> : null}
                   </tr>
                 </tfoot>

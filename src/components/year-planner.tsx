@@ -197,8 +197,14 @@ export function YearKeyDates({
 
   return (
     <div
-      className={size}
-      style={{ columnCount: columns, columnGap: dense ? "14px" : "24px" }}
+      // On screen a phone gets one column and wider screens get `columns`;
+      // the printed sheet (dense) always keeps its columns.
+      className={dense ? size : `${size} columns-1 sm:[column-count:var(--cols)]`}
+      style={
+        dense
+          ? { columnCount: columns, columnGap: "14px" }
+          : ({ "--cols": columns, columnGap: "24px" } as React.CSSProperties)
+      }
     >
       {MONTHS.map((name, m) => {
         const list = byMonth.get(m);

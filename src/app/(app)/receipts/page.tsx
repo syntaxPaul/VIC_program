@@ -89,26 +89,26 @@ export default async function ReceiptsPage() {
             <tbody>
               {receipts.map((r) => (
                 <tr key={r.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                  <Td>
+                  <Td label="Receipt no.">
                     <Link href={`/receipts/${r.id}`} className="tnum font-medium hover:underline">
                       {r.receiptNumber}
                     </Link>
                     {r.cancelled ? <Badge tone="danger" className="ml-2">Cancelled</Badge> : null}
                   </Td>
-                  <Td>
+                  <Td label="Donor">
                     <span className="block">{r.donorName}</span>
                     <span className="block text-[12px] text-[var(--text-muted)]">
                       {enumLabel(r.donorNature)}
                     </span>
                   </Td>
-                  <Td>{r.fund.name}</Td>
-                  <Td className="tnum">{formatDate(r.donationDate)}</Td>
-                  <Td>
+                  <Td label="Fund">{r.fund.name}</Td>
+                  <Td label="Donation date" className="tnum">{formatDate(r.donationDate)}</Td>
+                  <Td label="Type">
                     <Badge tone={r.isInKind ? "warning" : "neutral"}>
                       {r.isInKind ? "In kind" : "Cash"}
                     </Badge>
                   </Td>
-                  <Td numeric className={r.cancelled ? "line-through opacity-50" : "font-medium"}>
+                  <Td label="Amount" numeric className={r.cancelled ? "line-through opacity-50" : "font-medium"}>
                     {formatZAR(r.amount)}
                   </Td>
                 </tr>

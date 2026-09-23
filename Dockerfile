@@ -30,6 +30,9 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
+# The church runs on South African time. With the container in UTC a service
+# entered for 09:00 was stored as 09:00 UTC and shown as 11:00 in the browser.
+ENV TZ=Africa/Johannesburg
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

@@ -81,11 +81,34 @@ export function formatDateCeremonial(d: Date | string | null | undefined): strin
   return `${day} day of ${month}, ${date.getFullYear()}`;
 }
 
+/**
+ * YYYY-MM-DD for a date input, in the church's own time zone.
+ *
+ * This used toISOString(), which is UTC: a date at midnight in Johannesburg is
+ * 22:00 the previous day in UTC, so every date field showed the day before.
+ * It went unnoticed only because the server was running in UTC as well.
+ */
 export function formatDateInput(d: Date | string | null | undefined): string {
   if (!d) return "";
   const date = typeof d === "string" ? new Date(d) : d;
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** HH:MM for a time input, in the church's own time zone. */
+export function formatTimeInput(d: Date | string | null | undefined): string {
+  if (!d) return "";
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(date.getTime())) return "";
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+/** A time of day as the church reads it: 09:30. */
+export function formatTime(d: Date | string | null | undefined): string {
+  return formatTimeInput(d);
 }
 
 export function titleCase(s: string): string {
@@ -113,4 +136,25 @@ export function initials(name: string): string {
 export function percent(part: number, whole: number): number {
   if (!whole) return 0;
   return (part / whole) * 100;
+}
+
+/**
+ * The name to greet somebody by.
+ *
+ * Splitting on the first space greets Ps. Samuel Dube as "Ps." — titles are
+ * common here and belong to the name as written, not to how you address the
+ * person at their desk.
+ */
+const TITLES = new Set([
+  "ps", "pst", "pastor", "rev", "reverend", "bishop", "apostle", "prophet",
+  "evangelist", "deacon", "elder", "dr", "mr", "mrs", "ms", "miss", "prof",
+]);
+
+export function firstName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  for (const part of parts) {
+    const bare = part.replace(/\.$/, "").toLowerCase();
+    if (!TITLES.has(bare)) return part;
+  }
+  return parts[0] ?? fullName;
 }

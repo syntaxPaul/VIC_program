@@ -1,11 +1,13 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import { savePhoto, deletePhoto } from "@/lib/uploads";
 import type { Gender, MaritalStatus, MemberStatus } from "@/generated/prisma";
+import { parseSaId } from "@/lib/sa-id";
 
 function str(fd: FormData, k: string) {
   const v = fd.get(k);
@@ -30,8 +32,7 @@ async function nextMemberNumber() {
 }
 
 export async function saveMember(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("members", true);
 
   const data = {
     surname: str(formData, "surname") ?? "",
@@ -59,6 +60,17 @@ export async function saveMember(id: string | null, formData: FormData) {
 
   if (!data.fullName || !data.surname) {
     throw new Error("Surname and full name are required.");
+  }
+
+  // Store the ID number as digits, and let it fill a blank date of birth or
+  // gender — the browser does this as it is typed, this covers the rest.
+  if (data.idNumber) {
+    data.idNumber = data.idNumber.replace(/\D/g, "");
+    const parsed = parseSaId(data.idNumber);
+    if (parsed.valid) {
+      data.dob = data.dob ?? parsed.dob;
+      data.gender = data.gender ?? parsed.gender;
+    }
   }
 
   const photo = formData.get("photo");
@@ -117,8 +129,7 @@ export async function saveMember(id: string | null, formData: FormData) {
 
 /** Soft delete — records are retained for at least five years. */
 export async function archiveMember(id: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("members", true);
 
   const m = await db.member.update({
     where: { id },

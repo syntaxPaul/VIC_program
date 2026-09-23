@@ -35,7 +35,7 @@ export default async function AttendancePage() {
     }));
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-[1200px] 2xl:max-w-[1500px]">
       <PageHeader
         title="Attendance"
         description="Service headcounts over time."
@@ -88,16 +88,16 @@ export default async function AttendancePage() {
                 <tbody>
                   {registers.map((r) => (
                     <tr key={r.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                      <Td className="tnum">
+                      <Td label="Date" className="tnum">
                         <Link href={`/attendance/${r.id}`} className="font-medium hover:underline">
                           {formatDate(r.serviceDate)}
                         </Link>
                       </Td>
-                      <Td>{r.serviceName}</Td>
-                      <Td numeric className="font-medium">
+                      <Td label="Service">{r.serviceName}</Td>
+                      <Td label="Headcount" numeric className="font-medium">
                         {r.headcount !== null ? formatNumber(r.headcount) : "—"}
                       </Td>
-                      <Td>
+                      <Td label="Register">
                         {r._count.entries > 0 ? (
                           <Badge tone="success">{r._count.entries} named</Badge>
                         ) : (
@@ -109,7 +109,7 @@ export default async function AttendancePage() {
                           </Link>
                         )}
                       </Td>
-                      <Td className="text-[12.5px] text-[var(--text-muted)]">{r.notes ?? "—"}</Td>
+                      <Td label="Notes" className="text-[12.5px] text-[var(--text-muted)]">{r.notes ?? "—"}</Td>
                     </tr>
                   ))}
                 </tbody>

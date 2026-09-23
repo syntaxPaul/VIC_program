@@ -23,6 +23,8 @@ export const CATEGORY_COLOR: Record<string, string> = {
   WOMEN: "#A03C6B",
   MEN: "#3C5A8C",
   CHILDREN: "#5F7A4A",
+  WELFARE: "#B08A2E",
+  CONSECRATION: "#4F7F9A",
   OTHER: "#6F6558",
 };
 

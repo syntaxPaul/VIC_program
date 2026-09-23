@@ -37,7 +37,7 @@ export default async function AssetPage({
   const writeOff = writeOffAsset.bind(null, asset.id);
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-[1200px] 2xl:max-w-[1500px]">
       <PageHeader
         title={asset.description}
         description={`${asset.assetCode} · ${enumLabel(asset.category)}`}

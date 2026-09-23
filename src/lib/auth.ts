@@ -83,23 +83,6 @@ export async function authenticate(email: string, password: string) {
 
 // ── authorisation ────────────────────────────────────────────────────
 
-export const PERMISSIONS = {
-  ADMIN: ["members", "finance", "assets", "planner", "sacraments", "reports", "settings", "users", "notes"],
-  TREASURER: ["members:read", "finance", "assets", "reports", "planner:read", "sacraments:read"],
-  SECRETARY: ["members", "planner", "sacraments", "reports:read", "finance:read", "assets:read"],
-  PASTOR: ["members:read", "finance:read", "assets:read", "planner:read", "sacraments", "reports:read", "notes"],
-} as const satisfies Record<Role, readonly string[]>;
-
-export function can(role: Role, area: string, write = false): boolean {
-  const perms: readonly string[] = PERMISSIONS[role];
-  if (perms.includes(area)) return true;
-  if (!write && perms.includes(`${area}:read`)) return true;
-  return false;
-}
-
-export const ROLE_LABEL: Record<Role, string> = {
-  ADMIN: "Administrator",
-  TREASURER: "Treasurer",
-  SECRETARY: "Secretary",
-  PASTOR: "Pastor",
-};
+// Kept here as a re-export so every existing import keeps working; the table
+// itself lives in one place now.
+export { PERMISSIONS, can, ROLE_LABEL } from "@/lib/roles";

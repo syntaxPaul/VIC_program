@@ -23,21 +23,31 @@ export function CommandPalette({
   const [remote, setRemote] = React.useState<Result[]>([]);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Reset as the palette opens, during render rather than in an effect: an
+  // effect would show the previous search for one frame every time it is
+  // opened. Focus still has to wait for the input to exist.
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setQ("");
       setCursor(0);
       setRemote([]);
-      setTimeout(() => inputRef.current?.focus(), 10);
+    }
+  }
+
+  React.useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 10);
+      return () => clearTimeout(t);
     }
   }, [open]);
 
   // member / asset lookup
   React.useEffect(() => {
-    if (!open || q.trim().length < 2) {
-      setRemote([]);
-      return;
-    }
+    // Nothing to clear here: results shorter than the query are filtered out
+    // when they are read, which keeps this effect to one job — fetching.
+    if (!open || q.trim().length < 2) return;
     const ctl = new AbortController();
     const t = setTimeout(async () => {
       try {
@@ -61,13 +71,17 @@ export function CommandPalette({
   }, [items, q]);
 
   const results = React.useMemo(
-    () => [...navResults, ...remote].slice(0, 12),
-    [navResults, remote],
+    () => [...navResults, ...(q.trim().length >= 2 ? remote : [])].slice(0, 12),
+    [navResults, remote, q],
   );
 
-  React.useEffect(() => {
+  // The highlighted row belongs to the current query, so it is reset with it
+  // rather than one render later.
+  const [cursorQuery, setCursorQuery] = React.useState(q);
+  if (q !== cursorQuery) {
+    setCursorQuery(q);
     setCursor(0);
-  }, [q]);
+  }
 
   if (!open) return null;
 

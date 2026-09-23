@@ -1,9 +1,10 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import { savePhoto, deletePhoto } from "@/lib/uploads";
 import type { AssetCategory, AssetCondition, DisposalMethod, VerificationOutcome } from "@/generated/prisma";
 
@@ -35,8 +36,7 @@ async function nextAssetCode() {
 }
 
 export async function saveAsset(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("assets", true);
 
   const data = {
     description: str(formData, "description") ?? "",
@@ -103,8 +103,7 @@ export async function saveAsset(id: string | null, formData: FormData) {
  * "Disposed & written off" view with its approval reference.
  */
 export async function writeOffAsset(id: string, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("assets", true);
 
   const approvalReference = str(formData, "approvalReference");
   if (!approvalReference) {
@@ -144,8 +143,7 @@ export async function writeOffAsset(id: string, formData: FormData) {
 /* ── stocktake ───────────────────────────────────────────────────── */
 
 export async function createStocktake(formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("assets", true);
 
   const st = await db.stocktake.create({
     data: {
@@ -161,8 +159,7 @@ export async function createStocktake(formData: FormData) {
 }
 
 export async function recordVerification(stocktakeId: string, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("assets", true);
 
   const assetId = str(formData, "assetId")!;
   const outcome = (str(formData, "outcome") ?? "FOUND") as VerificationOutcome;
@@ -204,8 +201,7 @@ export async function recordVerification(stocktakeId: string, formData: FormData
 }
 
 export async function closeStocktake(id: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("assets", true);
 
   await db.stocktake.update({
     where: { id },

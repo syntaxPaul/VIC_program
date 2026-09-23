@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Search, UserPlus, Users } from "lucide-react";
+import { Plus, Printer, Search, UserPlus, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatDate, enumLabel, initials } from "@/lib/format";
 import {
@@ -26,11 +26,11 @@ export default async function MembersPage({
     ...(q
       ? {
           OR: [
-            { fullName: { contains: q } },
-            { surname: { contains: q } },
-            { memberNumber: { contains: q } },
-            { email: { contains: q } },
-            { phone: { contains: q } },
+            { fullName: { contains: q, mode: "insensitive" } },
+            { surname: { contains: q, mode: "insensitive" } },
+            { memberNumber: { contains: q, mode: "insensitive" } },
+            { email: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q, mode: "insensitive" } },
           ],
         }
       : {}),
@@ -55,7 +55,7 @@ export default async function MembersPage({
   const filtered = Boolean(q || status || ministry);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title="Members"
         description={
@@ -64,11 +64,16 @@ export default async function MembersPage({
             : `${allTotal} members on the roll`
         }
         actions={
-          <Link href="/members/new">
-            <Button variant="primary">
-              <Plus size={15} /> Register member
-            </Button>
-          </Link>
+          <>
+            <Link href={`/members/print?${new URLSearchParams({ ...(q ? { q } : {}), ...(status ? { status } : {}), ...(ministry ? { ministry } : {}) }).toString()}`}>
+              <Button><Printer size={15} /> Print</Button>
+            </Link>
+            <Link href="/members/new">
+              <Button variant="primary">
+                <Plus size={15} /> Register member
+              </Button>
+            </Link>
+          </>
         }
       />
 
@@ -86,14 +91,14 @@ export default async function MembersPage({
               className="pl-9"
             />
           </div>
-          <Select name="status" defaultValue={status} className="w-40">
+          <Select name="status" defaultValue={status} className="w-full sm:w-40">
             <option value="">All statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
             <option value="TRANSFERRED">Transferred</option>
             <option value="DECEASED">Deceased</option>
           </Select>
-          <Select name="ministry" defaultValue={ministry} className="w-48">
+          <Select name="ministry" defaultValue={ministry} className="w-full sm:w-48">
             <option value="">All ministries</option>
             {ministries.map((m) => (
               <option key={m.id} value={m.id}>
@@ -153,7 +158,7 @@ export default async function MembersPage({
               <tbody>
                 {members.map((m) => (
                   <tr key={m.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                    <Td>
+                    <Td label="Member">
                       <Link href={`/members/${m.id}`} className="flex items-center gap-2.5 group">
                         {m.photoPath ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -179,8 +184,8 @@ export default async function MembersPage({
                         </span>
                       </Link>
                     </Td>
-                    <Td className="tnum text-[var(--text-muted)]">{m.memberNumber}</Td>
-                    <Td>
+                    <Td label="Number" className="tnum text-[var(--text-muted)]">{m.memberNumber}</Td>
+                    <Td label="Contact">
                       <span className="block text-[13px]">{m.phone ?? "—"}</span>
                       {m.email ? (
                         <span className="block truncate text-[12px] text-[var(--text-muted)]">
@@ -188,7 +193,7 @@ export default async function MembersPage({
                         </span>
                       ) : null}
                     </Td>
-                    <Td>
+                    <Td label="Ministry">
                       <div className="flex flex-wrap gap-1">
                         {m.ministries.slice(0, 2).map((mm) => (
                           <Badge key={mm.ministryId} tone="brand">
@@ -200,7 +205,7 @@ export default async function MembersPage({
                         ) : null}
                       </div>
                     </Td>
-                    <Td>
+                    <Td label="Status">
                       <Badge
                         tone={
                           m.status === "ACTIVE"
@@ -213,7 +218,7 @@ export default async function MembersPage({
                         {enumLabel(m.status)}
                       </Badge>
                     </Td>
-                    <Td className="tnum text-[var(--text-muted)]">
+                    <Td label="Joined" className="tnum text-[var(--text-muted)]">
                       {formatDate(m.registrationDate)}
                     </Td>
                   </tr>

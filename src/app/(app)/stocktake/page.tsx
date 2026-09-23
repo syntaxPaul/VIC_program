@@ -21,7 +21,7 @@ export default async function StocktakePage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="mx-auto max-w-[1200px] 2xl:max-w-[1500px]">
       <PageHeader
         title="Stocktake"
         description="Physically verify the register. Open a round, count by location, then resolve the exceptions."

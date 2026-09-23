@@ -135,7 +135,7 @@ export function AttendanceRegister({
       </Card>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-[var(--card)]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1400px] 2xl:max-w-[1760px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <p className="flex items-center gap-2 text-[13px]">
             <Users size={15} className="text-[var(--text-muted)]" />
             <span className="tnum font-semibold">{presentCount}</span>

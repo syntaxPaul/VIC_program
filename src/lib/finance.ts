@@ -259,8 +259,16 @@ export async function expenseBreakdown(period: Period, limit = 8) {
 
 /** Budget vs actual, per account, for a period. */
 export async function budgetVsActual(period: Period) {
+  // The church-wide budget. Department budgets are measured separately, each
+  // against the spending tagged to that department.
   const budget = await db.budget.findFirst({
-    where: { isActive: true, yearStart: { lte: period.end }, yearEnd: { gte: period.start } },
+    where: {
+      isActive: true,
+      status: "APPROVED",
+      departmentId: null,
+      yearStart: { lte: period.end },
+      yearEnd: { gte: period.start },
+    },
     include: { lines: { include: { account: true, fund: true } } },
   });
   if (!budget) return null;
@@ -345,4 +353,58 @@ export function depreciation(asset: {
     netBookValue: asset.acquisitionCost - accumulated,
     annual,
   };
+}
+
+/**
+ * Every department's approved budget for the period against what it actually
+ * spent — the one table a board wants to see about the ministries.
+ */
+export async function departmentBudgets(period: Period) {
+  const [departments, spend] = await Promise.all([
+    db.department.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        budgets: {
+          where: {
+            status: "APPROVED",
+            isActive: true,
+            yearStart: { lte: period.end },
+            yearEnd: { gte: period.start },
+          },
+          include: { lines: { include: { account: { select: { type: true } } } } },
+        },
+      },
+    }),
+    db.transaction.groupBy({
+      by: ["departmentId"],
+      where: {
+        ...notDeleted,
+        type: TxType.PAYMENT,
+        departmentId: { not: null },
+        date: { gte: period.start, lte: period.end },
+      },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const spentBy = new Map(spend.map((s) => [s.departmentId, s._sum.amount ?? 0]));
+
+  return departments.map((d) => {
+    const budget = d.budgets
+      .flatMap((b) => b.lines)
+      .filter((l) => l.account.type === AccountType.EXPENSE)
+      .reduce((sum, l) => sum + l.amount, 0);
+    const spent = spentBy.get(d.id) ?? 0;
+    return {
+      id: d.id,
+      name: d.name,
+      leader: d.leaderName,
+      hasBudget: d.budgets.length > 0,
+      budget,
+      spent,
+      remaining: budget - spent,
+      usedPct: budget > 0 ? (spent / budget) * 100 : null,
+    };
+  });
 }

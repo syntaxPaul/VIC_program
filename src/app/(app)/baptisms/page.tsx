@@ -104,7 +104,7 @@ export default async function BaptismsPage({
             <tbody>
               {records.map((b) => (
                 <tr key={b.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                  <Td>
+                  <Td label="Name">
                     <Link href={`/baptisms/${b.id}`} className="font-medium hover:underline">
                       {b.fullName}
                     </Link>
@@ -114,11 +114,11 @@ export default async function BaptismsPage({
                       </span>
                     ) : null}
                   </Td>
-                  <Td className="tnum text-[var(--text-muted)]">{b.registerNumber ?? "—"}</Td>
-                  <Td><Badge tone={TONE[b.status]}>{enumLabel(b.status)}</Badge></Td>
-                  <Td className="tnum">{formatDate(b.baptismDate)}</Td>
-                  <Td className="text-[13px]">{b.officiant ?? "—"}</Td>
-                  <Td>
+                  <Td label="Register no." className="tnum text-[var(--text-muted)]">{b.registerNumber ?? "—"}</Td>
+                  <Td label="Status"><Badge tone={TONE[b.status]}>{enumLabel(b.status)}</Badge></Td>
+                  <Td label="Baptism date" className="tnum">{formatDate(b.baptismDate)}</Td>
+                  <Td label="Officiant" className="text-[13px]">{b.officiant ?? "—"}</Td>
+                  <Td label="Certificate">
                     {b.certificateIssuedAt ? (
                       <Link
                         href={`/baptisms/${b.id}/certificate`}

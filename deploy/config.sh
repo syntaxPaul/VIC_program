@@ -33,10 +33,12 @@ PG_BACKUP_RETENTION_DAYS="${PG_BACKUP_RETENTION_DAYS:-35}"   # 7-35; 35 is the m
 # Container sizing. 0.5 vCPU / 1 GiB is comfortable for a small congregation.
 APP_CPU="${APP_CPU:-0.5}"
 APP_MEMORY="${APP_MEMORY:-1.0Gi}"
-# min-replicas 0 costs almost nothing but adds a cold start on the first
-# request after idle. Set to 1 if Sunday-morning responsiveness matters more
-# than roughly $10/month.
-APP_MIN_REPLICAS="${APP_MIN_REPLICAS:-0}"
+# One replica always running. At zero the container sleeps when idle and the
+# first request afterwards waits several seconds for it to start — which is
+# every Sunday morning, and every time somebody opens the membership link from
+# a poster. Roughly $10 a month buys that away. Set APP_MIN_REPLICAS=0 to go
+# back to sleeping.
+APP_MIN_REPLICAS="${APP_MIN_REPLICAS:-1}"
 # Kept at 1 deliberately: Next.js caches per replica, so several replicas
 # would disagree with each other. A church's traffic does not need more.
 APP_MAX_REPLICAS="${APP_MAX_REPLICAS:-1}"

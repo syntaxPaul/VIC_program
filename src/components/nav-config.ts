@@ -1,4 +1,5 @@
 import type { Role } from "@/generated/prisma";
+import { PERMISSIONS } from "@/lib/roles";
 
 export type NavItem = {
   label: string;
@@ -20,21 +21,35 @@ export const NAV: NavSection[] = [
     label: "People",
     items: [
       { label: "Members", href: "/members", area: "members", icon: "Users" },
-      { label: "Ministries", href: "/ministries", area: "members", icon: "HeartHandshake" },
+      { label: "Membership forms", href: "/applications", area: "applications", icon: "Inbox" },
       { label: "Attendance", href: "/attendance", area: "members", icon: "ClipboardCheck" },
       { label: "Baptisms", href: "/baptisms", area: "sacraments", icon: "Droplets" },
+      { label: "Consecrations", href: "/consecrations", area: "sacraments", icon: "Baby" },
       { label: "Notebook", href: "/notes", area: "notes", icon: "NotebookPen" },
+    ],
+  },
+  {
+    label: "Ministries",
+    items: [
+      { label: "Children's church", href: "/children", area: "children", icon: "Blocks" },
+      { label: "Youth", href: "/youth", area: "youth", icon: "Flame" },
+      { label: "Health & welfare", href: "/welfare", area: "welfare", icon: "HeartHandshake" },
+      { label: "Outreach", href: "/outreach", area: "outreach", icon: "Megaphone" },
+      { label: "Ministry groups", href: "/ministries", area: "members", icon: "UsersRound" },
     ],
   },
   {
     label: "Finance",
     items: [
-      { label: "Contributions", href: "/contributions", area: "finance", icon: "HandCoins" },
+      { label: "Tithes & offerings", href: "/tithes", area: "tithes", icon: "HandCoins" },
+      { label: "Counted offerings", href: "/contributions", area: "finance", icon: "Coins" },
       { label: "Expenses", href: "/expenses", area: "finance", icon: "Receipt" },
       { label: "Funds", href: "/funds", area: "finance", icon: "Wallet" },
+      { label: "Budgets", href: "/budgets", area: "budgets", icon: "Target" },
+      { label: "Board pack", href: "/reports/board-pack", area: "tithes", icon: "Presentation" },
+      { label: "Reports", href: "/reports", area: "reports", icon: "FileBarChart" },
       { label: "Chart of accounts", href: "/accounts", area: "finance", icon: "ListTree" },
       { label: "18A receipts", href: "/receipts", area: "finance", icon: "FileCheck", requires18a: true },
-      { label: "Reports", href: "/reports", area: "reports", icon: "FileBarChart" },
     ],
   },
   {
@@ -48,21 +63,17 @@ export const NAV: NavSection[] = [
     label: "Admin",
     items: [
       { label: "Planner", href: "/planner", area: "planner", icon: "CalendarDays" },
+      { label: "Departments", href: "/departments", area: "departments", icon: "Building2" },
+      { label: "Offices", href: "/roles", area: "users", icon: "IdCard" },
       { label: "Users", href: "/users", area: "users", icon: "Shield" },
       { label: "Settings", href: "/settings", area: "settings", icon: "Settings" },
     ],
   },
 ];
 
-const PERMISSIONS: Record<Role, readonly string[]> = {
-  ADMIN: ["members", "finance", "assets", "planner", "sacraments", "reports", "settings", "users", "notes"],
-  TREASURER: ["members:read", "finance", "assets", "reports", "planner:read", "sacraments:read"],
-  SECRETARY: ["members", "planner", "sacraments", "reports:read", "finance:read", "assets:read"],
-  PASTOR: ["members:read", "finance:read", "assets:read", "planner:read", "sacraments", "reports:read", "notes"],
-};
 
 export function visibleNav(role: Role, is18aApproved = false): NavSection[] {
-  const perms = PERMISSIONS[role];
+  const perms: readonly string[] = PERMISSIONS[role];
   const allowed = (area: string) =>
     perms.includes(area) || perms.includes(`${area}:read`);
 

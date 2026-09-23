@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { Shield } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession, ROLE_LABEL } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import { ROLE_DUTIES, ROLE_LABEL, ROLE_ORDER } from "@/lib/roles";
 import { saveUser } from "@/lib/actions/admin";
 import { formatDate } from "@/lib/format";
 import {
@@ -9,12 +10,9 @@ import {
   Select, TableWrap, Td, Th,
 } from "@/components/ui";
 
-const ROLE_BLURB = {
-  ADMIN: "Everything, including users and settings",
-  TREASURER: "Finance and assets; read-only elsewhere",
-  SECRETARY: "Members, planner and sacraments",
-  PASTOR: "Read-only across the board, plus sacraments",
-} as const;
+// The offices come from the shared table rather than a list kept here. This
+// page had its own, which is why adding Discipleship and Evangelist left the
+// administrator unable to create an account for either of them.
 
 export default async function UsersPage() {
   const session = await getSession();
@@ -42,15 +40,15 @@ export default async function UsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="hover:bg-sand-50 dark:hover:bg-sand-800/40">
-                  <Td className="font-medium">{u.name}</Td>
-                  <Td className="text-[13px] text-[var(--text-muted)]">{u.email}</Td>
-                  <Td><Badge tone="brand">{ROLE_LABEL[u.role]}</Badge></Td>
-                  <Td>
+                  <Td label="Name" className="font-medium">{u.name}</Td>
+                  <Td label="Email" className="text-[13px] text-[var(--text-muted)]">{u.email}</Td>
+                  <Td label="Role"><Badge tone="brand">{ROLE_LABEL[u.role]}</Badge></Td>
+                  <Td label="Status">
                     <Badge tone={u.isActive ? "success" : "neutral"}>
                       {u.isActive ? "Active" : "Disabled"}
                     </Badge>
                   </Td>
-                  <Td className="tnum text-[12.5px] text-[var(--text-muted)]">
+                  <Td label="Last signed in" className="tnum text-[12.5px] text-[var(--text-muted)]">
                     {u.lastLoginAt ? formatDate(u.lastLoginAt) : "Never"}
                   </Td>
                 </tr>
@@ -63,10 +61,10 @@ export default async function UsersPage() {
               What each role can do
             </p>
             <dl className="space-y-2">
-              {(Object.keys(ROLE_BLURB) as (keyof typeof ROLE_BLURB)[]).map((r) => (
+              {ROLE_ORDER.map((r) => (
                 <div key={r} className="flex gap-3 text-[13px]">
                   <dt className="w-28 shrink-0 font-medium">{ROLE_LABEL[r]}</dt>
-                  <dd className="text-[var(--text-muted)]">{ROLE_BLURB[r]}</dd>
+                  <dd className="text-[var(--text-muted)]">{ROLE_DUTIES[r].summary}</dd>
                 </div>
               ))}
             </dl>
@@ -85,7 +83,7 @@ export default async function UsersPage() {
               </Field>
               <Field label="Role">
                 <Select name="role" defaultValue="SECRETARY">
-                  {(Object.keys(ROLE_BLURB) as (keyof typeof ROLE_BLURB)[]).map((r) => (
+                  {ROLE_ORDER.map((r) => (
                     <option key={r} value={r}>{ROLE_LABEL[r]}</option>
                   ))}
                 </Select>

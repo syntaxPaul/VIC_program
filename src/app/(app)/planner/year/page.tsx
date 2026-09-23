@@ -48,7 +48,7 @@ export default async function YearPlannerPage({
   ).size;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className="mx-auto max-w-[1400px] 2xl:max-w-[1760px]">
       <PageHeader
         title={`The year ${year}`}
         description="Every service, meeting and special event on one sheet."
@@ -77,7 +77,13 @@ export default async function YearPlannerPage({
           </p>
           <YearLegend categories={categories} />
         </div>
-        <div className="overflow-x-auto p-4">
+        {/* Twelve months side by side need a wide screen. A phone held upright
+            gets the key dates below instead; turned sideways, it gets the chart. */}
+        <p className="px-4 py-5 text-[13px] text-[var(--text-muted)] sm:hidden">
+          Turn your phone sideways to see the whole year as a wall chart, or print
+          it. Every date is listed under Key dates below.
+        </p>
+        <div className="hidden overflow-x-auto p-4 sm:block">
           <div className="min-w-[760px]">
             <YearWallChart
               year={year}

@@ -1,9 +1,10 @@
 "use server";
 
+import { requireArea } from "@/lib/guards";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
 import type { BaptismStatus, EventCategory } from "@/generated/prisma";
 
 function str(fd: FormData, k: string) {
@@ -19,8 +20,7 @@ function dt(fd: FormData, k: string) {
 }
 
 export async function saveEvent(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("planner", true);
 
   const startsAt = dt(formData, "startsAt");
   if (!startsAt) throw new Error("A start date and time is required.");
@@ -44,8 +44,7 @@ export async function saveEvent(id: string | null, formData: FormData) {
 }
 
 export async function deleteEvent(id: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("planner", true);
   await db.event.update({ where: { id }, data: { deletedAt: new Date() } });
   revalidatePath("/planner");
 }
@@ -60,8 +59,7 @@ async function nextRegisterNumber(year: number) {
 }
 
 export async function saveBaptism(id: string | null, formData: FormData) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  await requireArea("sacraments", true);
 
   const status = (str(formData, "status") ?? "CANDIDATE") as BaptismStatus;
   const baptismDate = dt(formData, "baptismDate");
@@ -126,8 +124,7 @@ export async function saveBaptism(id: string | null, formData: FormData) {
 }
 
 export async function issueCertificate(id: string) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await requireArea("sacraments", true);
 
   const b = await db.baptism.findUniqueOrThrow({ where: { id } });
   if (b.status !== "BAPTISED") {

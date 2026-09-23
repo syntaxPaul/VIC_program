@@ -39,11 +39,15 @@ RUN set -e; \
              "backup:npx tsx scripts/backup.mts" \
              "seed:npx tsx prisma/seed.ts" \
              "go-live:npx tsx prisma/go-live.mts" \
-             "doctor:npx tsx scripts/doctor.mts"; do \
+             "doctor:npx tsx scripts/doctor.mts" \
+             "setup-church:npx tsx prisma/setup-church.mts"; do \
       name="${w%%:*}"; cmd="${w#*:}"; \
       printf '#!/bin/sh\nset -e\nexec %s\n' "$cmd" > "/usr/local/bin/run-$name"; \
       chmod +x "/usr/local/bin/run-$name"; \
     done
 
+# The church runs on South African time. With the container in UTC a service
+# entered for 09:00 was stored as 09:00 UTC and shown as 11:00 in the browser.
+ENV TZ=Africa/Johannesburg
 ENV NODE_ENV=production
 CMD ["/usr/local/bin/run-migrate"]
